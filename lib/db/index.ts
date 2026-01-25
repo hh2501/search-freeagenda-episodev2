@@ -43,10 +43,13 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     // API Key認証を使用する場合（Elastic Cloud Serverless推奨）
     // 参考: https://www.elastic.co/docs/deploy-manage/api-keys/serverless-project-api-keys
     if (process.env.OPENSEARCH_API_KEY) {
+      const apiKey = process.env.OPENSEARCH_API_KEY.trim();
+      
       if (process.env.NODE_ENV === 'development') {
         console.log('OpenSearch接続設定:');
         console.log('- エンドポイント:', endpoint);
         console.log('- 認証: API Key');
+        console.log('- API Keyの長さ:', apiKey.length);
       }
       
       // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
@@ -57,7 +60,7 @@ if (process.env.OPENSEARCH_ENDPOINT) {
         // API Key認証: カスタムヘッダー形式で設定
         // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} 形式で送信
         headers: {
-          'Authorization': `ApiKey ${process.env.OPENSEARCH_API_KEY}`,
+          'Authorization': `ApiKey ${apiKey}`,
         },
       });
     }

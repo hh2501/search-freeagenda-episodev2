@@ -61,6 +61,15 @@ export async function GET() {
       );
     }
 
+    // デバッグ: 環境変数の確認（本番環境でも表示）
+    const envCheck = {
+      endpoint: !!process.env.OPENSEARCH_ENDPOINT,
+      apiKey: !!process.env.OPENSEARCH_API_KEY,
+      apiKeyLength: process.env.OPENSEARCH_API_KEY?.length || 0,
+      username: !!process.env.OPENSEARCH_USERNAME,
+      password: !!process.env.OPENSEARCH_PASSWORD,
+    };
+
     // 1. クラスター情報の取得
     const clusterInfo = await client.info();
     
@@ -87,6 +96,7 @@ export async function GET() {
       episodesIndex: {
         exists: indexExists.body,
       },
+      envCheck,
       message: '接続テストが成功しました！',
     });
   } catch (error: any) {
