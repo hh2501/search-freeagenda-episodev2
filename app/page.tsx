@@ -90,7 +90,7 @@ export default function Home() {
       setResults([]);
       setIsInitialLoad(false);
     }
-  }, [searchParams]);
+  }, [searchParams, query]);
 
   useEffect(() => {
     // 入力が空になったときに新しいランダムキーワードを設定し、検索状態をリセット
