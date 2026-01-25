@@ -3,6 +3,9 @@ import { fetchEpisodesFromRSS } from '@/lib/rss/parser';
 import { saveEpisode, saveTranscript } from '@/lib/db/episodes';
 import { fetchTranscript } from '@/lib/transcript/fetcher';
 
+// APIルートを動的として明示的に設定（静的生成を無効化）
+export const dynamic = 'force-dynamic';
+
 const RSS_URL = 'https://rss.listen.style/p/freeagenda/rss';
 
 // SSE形式でメッセージを送信するヘルパー関数

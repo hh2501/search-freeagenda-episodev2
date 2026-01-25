@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
 
+// APIルートを動的として明示的に設定（静的生成を無効化）
+export const dynamic = 'force-dynamic';
+
 /**
  * インデックスを再作成するAPI
  * 注意: このAPIは既存のインデックスを削除して再作成します

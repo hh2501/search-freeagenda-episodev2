@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import client, { INDEX_NAME, initializeIndex } from '@/lib/db/index';
 import { getCachedResult, setCachedResult } from '@/lib/cache/search-cache';
 
+// APIルートを動的として明示的に設定（静的生成を無効化）
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
