@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material Design 3 カラーシステム */
+:root {
+  --md-outline: rgba(121, 116, 126, 0.38);
+  --md-on-surface: #1c1b1f;
+  --md-on-surface-variant: #49454f;
+  --md-surface-bright: #ffffff;
+  --md-surface-container: #f7f2fa;
+  --md-surface-container-high: #f0eaf4;
+  --md-surface-container-highest: #eae3ed;
+}
+
+/* ページ全体の背景色とフォント */
+body {
+  background-color: var(--md-surface-bright);
+  font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  color: var(--md-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* すべての要素にNoto Sans JPフォントを適用 */
+* {
+  font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* Material Design 3 スタイル */
+@layer components {
+  /* アウトライン入力フィールド（Material Design 3） */
+  .md-outlined-input {
+    @apply w-full px-4 py-3.5 pr-10 
+           border border-gray-300 rounded-l-md rounded-r-none
+           focus:outline-none focus:border-freeagenda-dark focus:ring-2 focus:ring-freeagenda-dark/20
+           text-base placeholder:text-gray-500
+           transition-all duration-200 ease-out
+           bg-white text-gray-900
+           hover:border-gray-400;
+  }
+  
+  /* 一体化検索フォーム */
+  .md-search-form {
+    @apply flex items-stretch relative
+           border border-gray-300 rounded-md
+           bg-[#f2f2f2]
+           focus-within:border-freeagenda-dark focus-within:ring-2 focus-within:ring-freeagenda-dark/20
+           transition-all duration-200 ease-out
+           hover:border-gray-400;
+  }
+  
+  .md-search-form-input {
+    @apply flex-1 px-4 py-3.5
+           border-none rounded-none
+           focus:outline-none
+           text-base placeholder:text-gray-500
+           bg-[#f2f2f2] text-gray-900;
+  }
+  
+  .md-search-form-button {
+    @apply flex items-center justify-center
+           w-12
+           border-none rounded-r-md
+           bg-freeagenda-dark text-white
+           transition-all duration-200 ease-out
+           disabled:opacity-50 disabled:cursor-not-allowed
+           flex-shrink-0;
+  }
+  
+  .md-search-form-button:hover {
+    background-color: rgba(48, 77, 95, 0.90);
+  }
+  
+  .md-search-form-button:active {
+    background-color: rgba(48, 77, 95, 0.88);
+  }
+
+  /* フィルドボタン（Material Design 3） */
+  .md-filled-button {
+    @apply px-6 py-3.5 bg-freeagenda-dark text-white rounded-md
+           text-sm font-medium
+           shadow-sm hover:shadow-md
+           transition-all duration-200 ease-out
+           disabled:cursor-not-allowed disabled:shadow-none
+           relative overflow-hidden;
+  }
+  
+  .md-filled-button:hover {
+    background-color: rgba(48, 77, 95, 0.92);
+  }
+  
+  .md-filled-button:active {
+    background-color: rgba(48, 77, 95, 0.88);
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  }
+
+  /* アウトラインボタン（Material Design 3） */
+  .md-outlined-button {
+    @apply px-6 py-3.5 bg-transparent text-freeagenda-dark rounded-md
+           text-sm font-medium
+           border border-gray-300
+           transition-all duration-200 ease-out
+           hover:bg-gray-50 active:bg-gray-100
+           disabled:cursor-not-allowed;
+  }
+  
+  .md-outlined-button:disabled {
+    opacity: 0.38;
+  }
+
+  /* アウトラインカード（Material Design 3） */
+  .md-outlined-card {
+    @apply bg-white rounded-xl border border-gray-200 p-6
+           transition-all duration-200 ease-out;
+  }
+
+  /* エレベーションカード（Material Design 3） */
+  .md-elevated-card {
+    @apply bg-white rounded-xl p-6
+           shadow-sm hover:shadow-md
+           transition-all duration-200 ease-out;
+  }
+
+  /* インタラクティブな検索結果カード（Material Design 3） */
+  .md-result-card {
+    @apply bg-white rounded-xl p-6
+           shadow-sm hover:shadow-lg
+           border border-transparent
+           hover:border-gray-200
+           hover:bg-gray-50
+           focus-within:border-freeagenda-dark/30
+           focus-within:shadow-lg
+           focus-within:bg-gray-50
+           transition-all duration-200 ease-out
+           cursor-pointer;
+  }
+  
+  .md-result-card:active {
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  }
+
+  /* テキストボタン（Material Design 3） */
+  .md-text-button {
+    @apply text-sm text-freeagenda-dark
+           font-medium transition-all duration-200 ease-out
+           hover:bg-gray-100 active:bg-gray-200
+           rounded-sm px-3 py-2
+           focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20;
+  }
+
+  /* コードスタイル（Material Design 3） */
+  .md-code {
+    @apply inline-block px-2.5 py-1 rounded-sm font-mono text-xs font-semibold
+           bg-gray-100 border border-gray-300
+           text-gray-900
+           transition-all duration-200 ease-out;
+  }
+
+  /* チップ（Material Design 3） */
+  .md-chip {
+    @apply inline-flex items-center px-3 py-1.5 rounded-full
+           bg-gray-100 text-gray-700
+           text-xs font-medium
+           border border-gray-300
+           transition-all duration-200 ease-out
+           hover:bg-gray-200;
+  }
+
+  /* バッジ（Material Design 3） */
+  .md-badge {
+    @apply inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5
+           rounded-full bg-freeagenda-dark text-white
+           text-xs font-medium;
+  }
+}
+
+/* ハイライト表示用のスタイル（Material Design 3） */
+mark {
+  @apply bg-yellow-200/60 px-0.5 rounded-sm;
+  color: inherit;
+}
+
+/* Material Design 3 アニメーション（Material Motion） */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Material Design 3 Easing Functions */
+:root {
+  --md-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --md-easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --md-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}
