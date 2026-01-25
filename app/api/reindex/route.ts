@@ -17,9 +17,10 @@ export async function POST() {
 
     // 既存のインデックスを削除
     const existsResponse = await client.indices.exists({ index: INDEX_NAME });
+    // OpenSearchクライアントのexistsメソッドはbooleanを返すが、型定義が異なる場合があるため型アサーションを使用
     const exists = typeof existsResponse === 'boolean' 
       ? existsResponse 
-      : existsResponse === true || (existsResponse as any).body === true || (existsResponse as any).statusCode === 200;
+      : (existsResponse as any).body === true || (existsResponse as any).statusCode === 200;
 
     if (exists) {
       await client.indices.delete({ index: INDEX_NAME });
