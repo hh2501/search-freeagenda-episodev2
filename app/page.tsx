@@ -90,7 +90,8 @@ function HomeContent() {
       setResults([]);
       setIsInitialLoad(false);
     }
-  }, [searchParams, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     // 入力が空になったときに新しいランダムキーワードを設定し、検索状態をリセット

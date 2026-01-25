@@ -56,7 +56,11 @@ body {
            focus:outline-none
            text-base placeholder:text-gray-500
            bg-[#f2f2f2] text-gray-900
-           pointer-events-auto;
+           cursor-text;
+  }
+  
+  .md-search-form-input:disabled {
+    @apply cursor-not-allowed opacity-50;
   }
   
   .md-search-form-button {
