@@ -608,7 +608,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { 
           error: '認証に失敗しました。',
-          details: 'ユーザー名とパスワードが正しいか確認してください。',
+          details: 'Elastic Cloud Serverlessの認証情報が正しく設定されていません。',
+          troubleshooting: {
+            message: '以下の点を確認してください：',
+            steps: [
+              '1. Vercelダッシュボードで環境変数を確認',
+              '2. OPENSEARCH_ENDPOINTが正しく設定されているか',
+              '3. OPENSEARCH_API_KEYが正しく設定されているか（API Keyのみを設定、ApiKeyプレフィックスは不要）',
+              '4. 環境変数の値に余分なスペースや改行がないか',
+              '5. 環境変数を設定後、デプロイを再実行',
+            ],
+            guide: '詳細は markdownfiles/VERCEL_ENV_VAR_SETUP.md を参照してください',
+          },
           errorDetails: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
         },
         { status: 401 }
