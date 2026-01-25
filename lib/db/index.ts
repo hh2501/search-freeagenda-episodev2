@@ -1,4 +1,4 @@
-import { Client } from '@opensearch-project/opensearch';
+import { Client, Connection } from '@opensearch-project/opensearch';
 
 if (!process.env.OPENSEARCH_ENDPOINT) {
   console.warn('警告: OPENSEARCH_ENDPOINTが設定されていません。OpenSearch機能は使用できません。');
@@ -54,14 +54,21 @@ if (process.env.OPENSEARCH_ENDPOINT) {
       
       // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
       // @opensearch-project/opensearchクライアントは、auth.apiKey形式を直接サポートしていないため、
-      // カスタムヘッダー形式で明示的に設定する必要がある
+      // Connectionクラスをカスタマイズして、すべてのリクエストに認証ヘッダーを追加
+      class ApiKeyConnection extends Connection {
+        request(params: any, callback?: any) {
+          // リクエストヘッダーに認証情報を追加
+          if (!params.headers) {
+            params.headers = {};
+          }
+          params.headers['Authorization'] = `ApiKey ${apiKey}`;
+          return super.request(params, callback);
+        }
+      }
+      
       client = new Client({
         node: endpoint,
-        // API Key認証: カスタムヘッダー形式で設定
-        // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} 形式で送信
-        headers: {
-          'Authorization': `ApiKey ${apiKey}`,
-        },
+        Connection: ApiKeyConnection,
       });
     }
     // 基本認証を使用する場合（開発環境など）
