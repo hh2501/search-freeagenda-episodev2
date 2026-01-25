@@ -1,72 +1,67 @@
 name: Auto Sync Episodes
 
 on:
+  workflow_dispatch: # 手動実行を許可
   schedule:
-    # 毎日午前2時（JST）に実行
-    # UTC時間で設定（JST = UTC+9 なので、UTC 17:00 = JST 02:00）
-    - cron: '0 17 * * *'
-  workflow_dispatch: # 手動実行も可能
+    - cron: '0 17 * * *' # 毎日午前2時 (JST) に実行 (UTC 17:00)
 
 jobs:
   sync:
-    name: Sync New Episodes
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # タイムアウトを10分に設定
-
+    timeout-minutes: 30
     steps:
-      - name: Sync Episodes
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Trigger Vercel API Sync
         env:
           VERCEL_URL: ${{ secrets.VERCEL_URL }}
           SYNC_AUTH_TOKEN: ${{ secrets.SYNC_AUTH_TOKEN }}
         run: |
-          echo "🔄 エピソードの差分同期を開始します..."
-          echo "📍 Vercel URL: ${VERCEL_URL}"
-          
-          # 認証ヘッダーの準備（トークンが設定されている場合のみ）
-          if [ -n "$SYNC_AUTH_TOKEN" ]; then
-            AUTH_HEADER="-H \"Authorization: Bearer ${SYNC_AUTH_TOKEN}\""
-            echo "🔐 認証トークンが設定されています"
-          else
-            AUTH_HEADER=""
-            echo "⚠️  認証トークンが設定されていません（本番環境では推奨）"
-          fi
-          
-          # VercelのAPIエンドポイントを呼び出す
-          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST \
-            $AUTH_HEADER \
-            -H "Content-Type: application/json" \
-            "${VERCEL_URL}/api/sync-incremental")
-          
-          echo "📊 HTTPステータスコード: ${HTTP_CODE}"
-          echo "📄 レスポンス:"
-          cat /tmp/response.json
-          echo ""
-          
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "✅ 同期が成功しました"
-            
-            # 新規エピソード数を取得（jqが使えない場合に備えてgrepを使用）
-            if command -v jq &> /dev/null; then
-              NEW_EPISODES=$(cat /tmp/response.json | jq -r '.newEpisodes // 0')
-              SYNCED_EPISODES=$(cat /tmp/response.json | jq -r '.syncedEpisodes // 0')
-              SYNCED_TRANSCRIPTS=$(cat /tmp/response.json | jq -r '.syncedTranscripts // 0')
-            else
-              # jqが使えない場合はgrepで抽出
-              NEW_EPISODES=$(cat /tmp/response.json | grep -o '"newEpisodes":[0-9]*' | grep -o '[0-9]*' || echo "0")
-              SYNCED_EPISODES=$(cat /tmp/response.json | grep -o '"syncedEpisodes":[0-9]*' | grep -o '[0-9]*' || echo "0")
-              SYNCED_TRANSCRIPTS=$(cat /tmp/response.json | grep -o '"syncedTranscripts":[0-9]*' | grep -o '[0-9]*' || echo "0")
-            fi
-            
-            if [ "$NEW_EPISODES" -gt 0 ]; then
-              echo "📝 新規エピソード: ${NEW_EPISODES}件"
-              echo "💾 同期済みエピソード: ${SYNCED_EPISODES}件"
-              echo "📄 同期済み文字起こし: ${SYNCED_TRANSCRIPTS}件"
-            else
-              echo "ℹ️  新規エピソードはありませんでした"
-            fi
-          else
-            echo "❌ 同期が失敗しました (HTTP ${HTTP_CODE})"
-            echo "エラー内容:"
-            cat /tmp/response.json
+          if [ -z "$VERCEL_URL" ]; then
+            echo "❌ VERCEL_URL is not set. Skipping Vercel API Sync."
+            echo "Please set VERCEL_URL in GitHub Secrets."
             exit 1
           fi
+          
+          echo "🚀 Triggering Vercel API Sync at ${VERCEL_URL}/api/sync-incremental"
+          
+          # curlコマンドでVercelのAPIエンドポイントを呼び出す
+          # SYNC_AUTH_TOKEN が設定されていればヘッダーに追加
+          if [ -n "$SYNC_AUTH_TOKEN" ]; then
+            echo "🔐 Using authentication token"
+            RESPONSE=$(curl -X POST \
+                 -H "Authorization: Bearer $SYNC_AUTH_TOKEN" \
+                 -H "Content-Type: application/json" \
+                 -w "\nHTTP_STATUS:%{http_code}" \
+                 -s \
+                 "${VERCEL_URL}/api/sync-incremental")
+          else
+            echo "⚠️  No authentication token set. Proceeding without authentication."
+            RESPONSE=$(curl -X POST \
+                 -H "Content-Type: application/json" \
+                 -w "\nHTTP_STATUS:%{http_code}" \
+                 -s \
+                 "${VERCEL_URL}/api/sync-incremental")
+          fi
+          
+          # HTTPステータスコードを抽出
+          HTTP_STATUS=$(echo "$RESPONSE" | grep -o "HTTP_STATUS:[0-9]*" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | sed 's/HTTP_STATUS:[0-9]*$//')
+          
+          echo "📊 Response Status: $HTTP_STATUS"
+          echo "📄 Response Body:"
+          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+          
+          # エラーチェック
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Sync failed with HTTP status: $HTTP_STATUS"
+            exit 1
+          fi
+          
+          echo "✅ Sync completed successfully"
