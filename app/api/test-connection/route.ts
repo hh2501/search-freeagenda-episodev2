@@ -102,8 +102,17 @@ export async function GET() {
   } catch (error: any) {
     console.error('接続テストエラー:', error);
     
+    // デバッグ: 環境変数の確認（本番環境でも表示）
+    const envCheck = {
+      endpoint: !!process.env.OPENSEARCH_ENDPOINT,
+      apiKey: !!process.env.OPENSEARCH_API_KEY,
+      apiKeyLength: process.env.OPENSEARCH_API_KEY?.length || 0,
+      username: !!process.env.OPENSEARCH_USERNAME,
+      password: !!process.env.OPENSEARCH_PASSWORD,
+    };
+    
     // 認証エラーの場合、より詳細な情報を提供
-    const isAuthError = error.meta?.statusCode === 401 || error.message?.includes('authentication');
+    const isAuthError = error.meta?.statusCode === 401 || error.message?.includes('authentication') || error.message?.includes('missing authentication');
     
     return NextResponse.json(
       {
@@ -115,17 +124,19 @@ export async function GET() {
               reason: error.meta.body?.error?.reason,
             }
           : undefined,
+        envCheck,
         troubleshooting: isAuthError
           ? {
               message: '認証エラーが発生しました。以下の点を確認してください：',
               steps: [
-                '1. Elastic Cloudコンソールで「View connection details」をクリックしてパスワードを確認',
-                '2. .env.localファイルのOPENSEARCH_PASSWORDが正しいか確認',
-                '3. パスワードに余分なスペースや引用符がないか確認',
-                '4. 環境変数を変更した後、開発サーバーを再起動',
-                '5. パスワードを忘れた場合は、Elastic Cloudコンソールで「Reset password」を実行',
+                '1. Vercelダッシュボードで環境変数を確認',
+                '2. OPENSEARCH_ENDPOINTが正しく設定されているか',
+                '3. OPENSEARCH_API_KEYが正しく設定されているか（API Keyのみを設定、ApiKeyプレフィックスは不要）',
+                '4. 環境変数の値に余分なスペースや改行がないか',
+                '5. 環境変数を設定後、デプロイを再実行',
+                '6. Elastic CloudコンソールでAPI Keyが有効か確認',
               ],
-              guide: '詳細は markdownfiles/ELASTIC_AUTH_TROUBLESHOOTING.md を参照してください',
+              guide: '詳細は markdownfiles/VERCEL_ENV_VAR_SETUP.md を参照してください',
             }
           : undefined,
       },
