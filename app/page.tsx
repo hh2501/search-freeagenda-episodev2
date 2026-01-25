@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -20,7 +20,7 @@ interface SearchResult {
   rank: number;
 }
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
@@ -693,5 +693,37 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="mb-6 flex justify-center">
+              <Image
+                src="/Thumbnail_image.jpg"
+                alt="FREE AGENDA by Hikaru & Yamotty"
+                width={400}
+                height={400}
+                className="max-w-full h-auto rounded-xl shadow-md"
+                priority
+                unoptimized
+              />
+            </div>
+            <h1 className="text-headline-large md:text-display-small font-bold mb-4 text-gray-900">
+              フリーアジェンダのあの回
+            </h1>
+            <p className="text-body-large text-gray-600 mb-4 font-medium">
+              探している「あの回」を覚えているキーワードから検索
+            </p>
+          </div>
+        </div>
+      </main>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
