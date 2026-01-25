@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import client from '@/lib/db/index';
 
+// APIルートを動的として明示的に設定（静的生成を無効化）
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // 環境変数の確認
