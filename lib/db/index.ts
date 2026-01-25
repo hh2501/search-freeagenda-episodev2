@@ -99,7 +99,6 @@ if (process.env.OPENSEARCH_ENDPOINT) {
           : undefined,
       });
     }
-  }
 } else {
   if (process.env.NODE_ENV === 'development') {
     console.warn('[lib/db/index.ts] OPENSEARCH_ENDPOINTが設定されていません。クライアントは初期化されません。');
