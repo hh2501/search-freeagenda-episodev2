@@ -55,7 +55,8 @@ body {
            border-none rounded-none
            focus:outline-none
            text-base placeholder:text-gray-500
-           bg-[#f2f2f2] text-gray-900;
+           bg-[#f2f2f2] text-gray-900
+           pointer-events-auto;
   }
   
   .md-search-form-button {

@@ -332,6 +332,8 @@ function HomeContent() {
               placeholder={placeholder}
               className="md-search-form-input"
               disabled={loading}
+              autoComplete="off"
+              autoFocus={false}
             />
             {query && (
               <button
