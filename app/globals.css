@@ -131,10 +131,10 @@ body {
   .md-result-card {
     @apply bg-white rounded-xl p-6
            shadow-sm hover:shadow-lg
-           border border-transparent
-           hover:border-gray-200
+           border border-gray-200
+           hover:border-freeagenda-dark/40
            hover:bg-gray-50
-           focus-within:border-freeagenda-dark/30
+           focus-within:border-freeagenda-dark/50
            focus-within:shadow-lg
            focus-within:bg-gray-50
            transition-all duration-200 ease-out
