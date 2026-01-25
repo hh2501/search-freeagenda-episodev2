@@ -25,37 +25,34 @@ if (process.env.OPENSEARCH_ENDPOINT) {
   // API Key認証を優先（Elastic Cloud Serverless推奨）
   // AWS_REGIONが設定されていても、OPENSEARCH_API_KEYが設定されている場合はAPI Key認証を使用
   if (process.env.OPENSEARCH_API_KEY) {
-    // API Key認証を使用する場合（Elastic Cloud Serverless推奨）
-    // 参考: https://www.elastic.co/docs/deploy-manage/api-keys/serverless-project-api-keys
-    if (process.env.OPENSEARCH_API_KEY) {
-      const apiKey = process.env.OPENSEARCH_API_KEY.trim();
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('OpenSearch接続設定:');
-        console.log('- エンドポイント:', endpoint);
-        console.log('- 認証: API Key');
-        console.log('- API Keyの長さ:', apiKey.length);
-      }
-      
-      // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
-      // @opensearch-project/opensearchクライアントは、auth.apiKey形式を直接サポートしていないため、
-      // Connectionクラスをカスタマイズして、すべてのリクエストに認証ヘッダーを追加
-      class ApiKeyConnection extends Connection {
-        request(params: any, callback?: any) {
-          // リクエストヘッダーに認証情報を追加
-          if (!params.headers) {
-            params.headers = {};
-          }
-          params.headers['Authorization'] = `ApiKey ${apiKey}`;
-          return super.request(params, callback);
+    const apiKey = process.env.OPENSEARCH_API_KEY.trim();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('OpenSearch接続設定:');
+      console.log('- エンドポイント:', endpoint);
+      console.log('- 認証: API Key');
+      console.log('- API Keyの長さ:', apiKey.length);
+    }
+    
+    // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
+    // @opensearch-project/opensearchクライアントは、auth.apiKey形式を直接サポートしていないため、
+    // Connectionクラスをカスタマイズして、すべてのリクエストに認証ヘッダーを追加
+    class ApiKeyConnection extends Connection {
+      request(params: any, callback?: any) {
+        // リクエストヘッダーに認証情報を追加
+        if (!params.headers) {
+          params.headers = {};
         }
+        params.headers['Authorization'] = `ApiKey ${apiKey}`;
+        return super.request(params, callback);
       }
-      
-      client = new Client({
-        node: endpoint,
-        Connection: ApiKeyConnection,
-      });
-    } else if (process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD) {
+    }
+    
+    client = new Client({
+      node: endpoint,
+      Connection: ApiKeyConnection,
+    });
+  } else if (process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD) {
       // 基本認証を使用する場合（開発環境など）
       const hasAuth = true;
       
