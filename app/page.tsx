@@ -318,11 +318,19 @@ function HomeContent() {
               type="text"
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value);
-                if (e.target.value === '' && searchHistory.length > 0) {
+                const newValue = e.target.value;
+                setQuery(newValue);
+                if (newValue === '' && searchHistory.length > 0) {
                   setShowHistory(true);
-                } else if (e.target.value !== '') {
+                } else if (newValue !== '') {
                   setShowHistory(false);
+                }
+              }}
+              onKeyDown={(e) => {
+                // Enterキーで検索を実行
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSearch(e as any);
                 }
               }}
               onFocus={() => {
@@ -335,6 +343,8 @@ function HomeContent() {
               disabled={loading}
               autoComplete="off"
               autoFocus={false}
+              readOnly={false}
+              tabIndex={0}
             />
             {query && (
               <button
