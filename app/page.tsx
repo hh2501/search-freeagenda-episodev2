@@ -481,7 +481,7 @@ function HomeContent() {
           </div>
         </form>
 
-        {(query === '' || (results.length === 0 && !loading)) && (
+        {query === '' && (
           <div className="mt-6 md-outlined-card">
               <h3 className="text-title-large font-semibold text-gray-800 mb-6">検索のコツ</h3>
             
