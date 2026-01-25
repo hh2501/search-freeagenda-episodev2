@@ -22,24 +22,9 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     endpoint = endpoint.slice(0, -1);
   }
   
-  // AWS認証を使用する場合
-  if (process.env.AWS_REGION) {
-    // AWS認証を使用する場合は、aws-sdkパッケージが必要です
-    // 現在は基本認証を使用する想定のため、AWS認証の実装は後で追加可能
-    console.warn('警告: AWS認証は現在サポートされていません。基本認証を使用してください。');
-    console.warn('AWS認証を使用する場合は、aws-sdkパッケージをインストールしてください: npm install aws-sdk');
-    
-    // 基本認証にフォールバック
-    client = new Client({
-      node: endpoint,
-      auth: process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD
-        ? {
-            username: process.env.OPENSEARCH_USERNAME,
-            password: process.env.OPENSEARCH_PASSWORD,
-          }
-        : undefined,
-    });
-  } else {
+  // API Key認証を優先（Elastic Cloud Serverless推奨）
+  // AWS_REGIONが設定されていても、OPENSEARCH_API_KEYが設定されている場合はAPI Key認証を使用
+  if (process.env.OPENSEARCH_API_KEY) {
     // API Key認証を使用する場合（Elastic Cloud Serverless推奨）
     // 参考: https://www.elastic.co/docs/deploy-manage/api-keys/serverless-project-api-keys
     if (process.env.OPENSEARCH_API_KEY) {
@@ -70,9 +55,8 @@ if (process.env.OPENSEARCH_ENDPOINT) {
         node: endpoint,
         Connection: ApiKeyConnection,
       });
-    }
-    // 基本認証を使用する場合（開発環境など）
-    else if (process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD) {
+    } else if (process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD) {
+      // 基本認証を使用する場合（開発環境など）
       const hasAuth = true;
       
       if (process.env.NODE_ENV === 'development') {
@@ -97,6 +81,25 @@ if (process.env.OPENSEARCH_ENDPOINT) {
       
       client = new Client({
         node: endpoint,
+      });
+    }
+    
+    // AWS認証を使用する場合（AWS_REGIONが設定されていて、API Keyも基本認証も設定されていない場合）
+    if (!client && process.env.AWS_REGION) {
+      // AWS認証を使用する場合は、aws-sdkパッケージが必要です
+      // 現在は基本認証を使用する想定のため、AWS認証の実装は後で追加可能
+      console.warn('警告: AWS認証は現在サポートされていません。基本認証またはAPI Key認証を使用してください。');
+      console.warn('AWS認証を使用する場合は、aws-sdkパッケージをインストールしてください: npm install aws-sdk');
+      
+      // 基本認証にフォールバック
+      client = new Client({
+        node: endpoint,
+        auth: process.env.OPENSEARCH_USERNAME && process.env.OPENSEARCH_PASSWORD
+          ? {
+              username: process.env.OPENSEARCH_USERNAME,
+              password: process.env.OPENSEARCH_PASSWORD,
+            }
+          : undefined,
       });
     }
   }
