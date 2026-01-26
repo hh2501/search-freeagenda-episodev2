@@ -332,14 +332,17 @@ function HomeContent() {
           </p>
           {latestEpisode && (
             <div className="flex flex-col items-center pb-3 text-sm">
-              <a
-                href={latestEpisode.listenUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-6 text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-              >
-                最新反映回: #{latestEpisode.episodeNumber} {latestEpisode.title.replace(/^#\d+_/, '')}
-              </a>
+              <div className="min-h-6 text-gray-600">
+                最新反映回:{' '}
+                <a
+                  href={latestEpisode.listenUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                >
+                  #{latestEpisode.episodeNumber} {latestEpisode.title.replace(/^#\d+_/, '')}
+                </a>
+              </div>
             </div>
           )}
         </div>
