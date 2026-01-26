@@ -201,7 +201,7 @@ export default function EpisodeDetail() {
             rel="noopener noreferrer"
             className="md-filled-button inline-block mb-8"
           >
-            LISTENで開く
+            LISTENで聴く
           </a>
 
           {episode.description && (
