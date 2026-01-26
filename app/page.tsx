@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -32,9 +32,6 @@ function HomeContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
-  const [isComposing, setIsComposing] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isManualSearchRef = useRef(false);
 
   useEffect(() => {
     // 初回マウント時にランダムキーワードを設定
@@ -119,7 +116,7 @@ function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
-  const performSearch = useCallback(async (searchQuery: string) => {
+  const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       return;
     }
@@ -162,69 +159,9 @@ function HomeContent() {
     } finally {
       setLoading(false);
       setIsInitialLoad(false);
-      // 検索完了後に入力フィールドにフォーカスを戻す（入力継続のため）
-      // リアルタイム検索の場合は、入力フィールドにフォーカスが残っているはずなので、それを維持
-      requestAnimationFrame(() => {
-        if (searchInputRef.current && document.activeElement === searchInputRef.current) {
-          // 既に入力フィールドにフォーカスがある場合は何もしない
-          return;
-        }
-        // フォーカスが外れている場合のみ、入力フィールドにフォーカスを戻す
-        if (searchInputRef.current) {
-          const activeElement = document.activeElement as HTMLElement | null;
-          // フォーカスがbodyやnullの場合のみ、入力フィールドにフォーカスを戻す
-          if (!activeElement || activeElement === document.body || activeElement.tagName === 'BODY') {
-            searchInputRef.current.focus();
-          }
-        }
-      });
     }
-  }, []);
+  };
 
-  // リアルタイム検索（debounce付き）
-  useEffect(() => {
-    // 手動検索（フォーム送信やEnterキー）の場合はスキップ
-    if (isManualSearchRef.current) {
-      isManualSearchRef.current = false;
-      return;
-    }
-
-    // URLパラメータからの検索の場合はスキップ（別のuseEffectで処理）
-    if (isInitialLoad) {
-      return;
-    }
-
-    // IME入力中（変換中）の場合は検索を待つ
-    if (isComposing) {
-      // 既存のタイマーをクリア
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      return;
-    }
-
-    // 既存のタイマーをクリア
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // クエリが空の場合は検索しない
-    if (!query.trim()) {
-      return;
-    }
-
-    // debounce: 500ms待機後に検索を実行
-    debounceTimerRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 500);
-
-    // クリーンアップ関数
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [query, isInitialLoad, isComposing, performSearch]);
 
   useEffect(() => {
     // スラッシュ（/）キーで検索バーにフォーカスを移動
@@ -254,12 +191,11 @@ function HomeContent() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 手動検索のフラグを設定（debounceをスキップ）
-    isManualSearchRef.current = true;
-    // 既存のdebounceタイマーをクリア
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
+    // URLパラメータを更新して検索状態を保存（ブラウザの戻るボタンで復元可能にする）
+    if (query.trim()) {
+      router.push(`/?q=${encodeURIComponent(query)}`, { scroll: false });
+    } else {
+      router.push('/', { scroll: false });
     }
     await performSearch(query);
   };
@@ -362,37 +298,7 @@ function HomeContent() {
               type="text"
               value={query}
               onChange={(e) => {
-                const newValue = e.target.value;
-                setQuery(newValue);
-                // 通常の入力時はisInitialLoadをfalseに設定（リアルタイム検索を有効化）
-                if (isInitialLoad) {
-                  setIsInitialLoad(false);
-                }
-              }}
-              onCompositionStart={() => {
-                // IME入力開始（変換開始）
-                setIsComposing(true);
-                // 既存のdebounceタイマーをクリア
-                if (debounceTimerRef.current) {
-                  clearTimeout(debounceTimerRef.current);
-                  debounceTimerRef.current = null;
-                }
-              }}
-              onCompositionEnd={(e) => {
-                // IME入力確定（変換確定）
-                setIsComposing(false);
-                // 変換確定後に検索を実行（debounce付き）
-                const finalValue = e.currentTarget.value;
-                if (finalValue.trim() && !isInitialLoad) {
-                  // 既存のタイマーをクリア
-                  if (debounceTimerRef.current) {
-                    clearTimeout(debounceTimerRef.current);
-                  }
-                  // debounce: 300ms待機後に検索を実行（変換確定後は少し短めに）
-                  debounceTimerRef.current = setTimeout(() => {
-                    performSearch(finalValue);
-                  }, 300);
-                }
+                setQuery(e.target.value);
               }}
               onKeyDown={(e) => {
                 // Enterキーで検索を実行
