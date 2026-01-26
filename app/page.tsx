@@ -409,11 +409,8 @@ function HomeContent() {
                 <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
                   キーワードを <code className="md-code">&quot;&quot;</code>（ダブルクォーテーション）で囲みます。キーワードに完全一致するエピソードのみを表示します。
                 </p>
-                <p className="text-body-medium text-gray-600 mb-2">
-                  <strong>例：</strong><code className="md-code">&quot;社会&quot;</code> と入力すると、「社会」という文字列を含むエピソードが表示されます。
-                </p>
                 <p className="text-body-medium text-gray-600">
-                  「会社員」など、文字の並びが異なるものは除外されます。
+                  <strong>例：</strong><code className="md-code">&quot;社会&quot;</code> と入力すると、「社会」という文字列を含むエピソードが表示されます。「会社員」など、文字の並びが異なるものは除外されます。
                 </p>
               </div>
 
