@@ -32,6 +32,7 @@ function HomeContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
+  const [isComposing, setIsComposing] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isManualSearchRef = useRef(false);
 
@@ -161,6 +162,22 @@ function HomeContent() {
     } finally {
       setLoading(false);
       setIsInitialLoad(false);
+      // 検索完了後に入力フィールドにフォーカスを戻す（入力継続のため）
+      // リアルタイム検索の場合は、入力フィールドにフォーカスが残っているはずなので、それを維持
+      requestAnimationFrame(() => {
+        if (searchInputRef.current && document.activeElement === searchInputRef.current) {
+          // 既に入力フィールドにフォーカスがある場合は何もしない
+          return;
+        }
+        // フォーカスが外れている場合のみ、入力フィールドにフォーカスを戻す
+        if (searchInputRef.current) {
+          const activeElement = document.activeElement as HTMLElement | null;
+          // フォーカスがbodyやnullの場合のみ、入力フィールドにフォーカスを戻す
+          if (!activeElement || activeElement === document.body || activeElement.tagName === 'BODY') {
+            searchInputRef.current.focus();
+          }
+        }
+      });
     }
   }, []);
 
@@ -174,6 +191,15 @@ function HomeContent() {
 
     // URLパラメータからの検索の場合はスキップ（別のuseEffectで処理）
     if (isInitialLoad) {
+      return;
+    }
+
+    // IME入力中（変換中）の場合は検索を待つ
+    if (isComposing) {
+      // 既存のタイマーをクリア
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       return;
     }
 
@@ -198,7 +224,7 @@ function HomeContent() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [query, isInitialLoad, performSearch]);
+  }, [query, isInitialLoad, isComposing, performSearch]);
 
   useEffect(() => {
     // スラッシュ（/）キーで検索バーにフォーカスを移動
@@ -336,7 +362,37 @@ function HomeContent() {
               type="text"
               value={query}
               onChange={(e) => {
-                setQuery(e.target.value);
+                const newValue = e.target.value;
+                setQuery(newValue);
+                // 通常の入力時はisInitialLoadをfalseに設定（リアルタイム検索を有効化）
+                if (isInitialLoad) {
+                  setIsInitialLoad(false);
+                }
+              }}
+              onCompositionStart={() => {
+                // IME入力開始（変換開始）
+                setIsComposing(true);
+                // 既存のdebounceタイマーをクリア
+                if (debounceTimerRef.current) {
+                  clearTimeout(debounceTimerRef.current);
+                  debounceTimerRef.current = null;
+                }
+              }}
+              onCompositionEnd={(e) => {
+                // IME入力確定（変換確定）
+                setIsComposing(false);
+                // 変換確定後に検索を実行（debounce付き）
+                const finalValue = e.currentTarget.value;
+                if (finalValue.trim() && !isInitialLoad) {
+                  // 既存のタイマーをクリア
+                  if (debounceTimerRef.current) {
+                    clearTimeout(debounceTimerRef.current);
+                  }
+                  // debounce: 300ms待機後に検索を実行（変換確定後は少し短めに）
+                  debounceTimerRef.current = setTimeout(() => {
+                    performSearch(finalValue);
+                  }, 300);
+                }
               }}
               onKeyDown={(e) => {
                 // Enterキーで検索を実行
@@ -531,9 +587,10 @@ function HomeContent() {
                   router.push(`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ''}`);
                 }
               }}
-              tabIndex={0}
+              tabIndex={-1}
               role="button"
               aria-label={`エピソードを開く: ${result.title.replace(/<[^>]*>/g, '')}`}
+              data-episode-id={result.episodeId}
             >
               <h2 className="text-title-large font-bold mb-3">
                 <Link
