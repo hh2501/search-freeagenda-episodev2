@@ -525,33 +525,36 @@ function HomeContent() {
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
                 <h4 className="text-title-medium font-semibold text-gray-800 mb-2">通常の検索</h4>
                 <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  キーワードをそのまま入力してください。システムが、入力したキーワードを含むエピソードを幅広く表示します。
+                  キーワードをそのまま入力します。キーワードを含むエピソードが幅広く表示されます。
                 </p>
                 <p className="text-body-medium text-gray-600">
-                  例：<code className="md-code">社会</code> と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます
+                  <strong>例：</strong><code className="md-code">社会</code> と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます。
                 </p>
               </div>
 
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
                 <h4 className="text-title-medium font-semibold text-gray-800 mb-2">完全一致検索</h4>
                 <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  キーワードを &quot;&quot;（ダブルクォーテーション）で囲んでください。システムが、入力したキーワードと完全に一致するエピソードのみを表示します。
+                  キーワードを <code className="md-code">&quot;&quot;</code>（ダブルクォーテーション）で囲みます。キーワードに完全一致するエピソードのみを表示します。
+                </p>
+                <p className="text-body-medium text-gray-600 mb-2">
+                  <strong>例：</strong><code className="md-code">&quot;社会&quot;</code> と入力すると、「社会」という文字列を含むエピソードが表示されます。
                 </p>
                 <p className="text-body-medium text-gray-600">
-                  例：<code className="md-code">&quot;社会&quot;</code> と入力すると、「社会」というキーワードを含むエピソードのみが表示されます。「会社員」などは表示されません
+                  「会社員」など、文字の並びが異なるものは除外されます。
                 </p>
               </div>
 
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
                 <h4 className="text-title-medium font-semibold text-gray-800 mb-2">キーワードの組み合わせ</h4>
                 <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。各キーワードを &quot;&quot; で囲む方法を推奨します。
+                  複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。
+                </p>
+                <p className="text-body-medium text-gray-600 mb-2">
+                  <strong>例：</strong><code className="md-code">&quot;社会&quot; &quot;資本&quot;</code> → 両方のキーワードに完全一致するエピソードが表示されます。
                 </p>
                 <p className="text-body-medium text-gray-600">
-                  例：<code className="md-code">&quot;プロダクト&quot; &quot;スタートアップ&quot;</code> と入力すると、両方のキーワードに完全一致するエピソードが表示されます
-                </p>
-                <p className="text-body-medium text-gray-600">
-                  例：<code className="md-code">&quot;プロダクト&quot; スタートアップ</code> と入力すると、「プロダクト」に完全一致し、「スタートアップ」を含むエピソードが表示されます
+                  <strong>例：</strong><code className="md-code">&quot;社会&quot; 資本</code> → 「社会」に完全一致し、「資本」を含むエピソードが表示されます。
                 </p>
               </div>
             </div>
