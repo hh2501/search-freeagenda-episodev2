@@ -32,15 +32,11 @@ export default function About() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 leading-relaxed mb-5 text-base">
-              「フリーアジェンダのあの回」は、思い出せないエピソードを探すための<span className="font-bold text-freeagenda-dark">非公式</span>の検索エンジンです。
+              「フリーアジェンダのあの回」は、思い出せないエピソードを簡単に見つけられる<span className="font-bold text-freeagenda-dark">非公式</span>の検索ツールです。
             </p>
 
             <p className="text-gray-700 leading-relaxed mb-5 text-base">
-              Spotify や YouTube の検索では見つからない内容も、エピソード全文を対象に検索できるため、確実に探し出せます。
-            </p>
-
-            <p className="text-gray-700 leading-relaxed text-base">
-              エピソードが更新された場合は、24時間以内に検索結果へ反映されます。
+              SpotifyやYouTubeの検索では届かない<strong>トーク内容の細部まで、文字起こしから検索が可能</strong>です。最新エピソードも、更新から24時間以内には反映されます。
             </p>
           </div>
         </div>
