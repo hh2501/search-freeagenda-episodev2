@@ -135,13 +135,16 @@ export function findTimestampForText(
     ? cleanSearchText.substring(0, 50) 
     : cleanSearchText;
 
-  // 各セグメントで検索テキストが含まれているか確認
-  for (const segment of segments) {
-    // セグメントのテキストからハイライトタグを削除して比較
-    const cleanSegmentText = segment.text.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1');
-    
+  // 各セグメントで検索テキストが含まれているか確認（最適化: 早期リターン）
+  // セグメントのテキストを事前にクリーンアップしてキャッシュ（パフォーマンス改善）
+  const cleanSegmentTexts = segments.map(seg => ({
+    ...seg,
+    cleanText: seg.text.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1'),
+  }));
+  
+  for (const segment of cleanSegmentTexts) {
     // 完全一致または部分一致を確認
-    if (cleanSegmentText.includes(cleanSearchText) || cleanSearchText.includes(cleanSegmentText)) {
+    if (segment.cleanText.includes(cleanSearchText) || cleanSearchText.includes(segment.cleanText)) {
       return {
         startTime: segment.startTime,
         endTime: segment.endTime,
@@ -149,7 +152,7 @@ export function findTimestampForText(
     }
     
     // 短縮版での検索
-    if (cleanSegmentText.includes(searchTextShort) || searchTextShort.includes(cleanSegmentText)) {
+    if (segment.cleanText.includes(searchTextShort) || searchTextShort.includes(segment.cleanText)) {
       return {
         startTime: segment.startTime,
         endTime: segment.endTime,
@@ -163,9 +166,8 @@ export function findTimestampForText(
     // 最初の3つの単語を使用（長いフラグメントの場合）
     const keyWords = searchWords.slice(0, Math.min(3, searchWords.length));
     
-    for (const segment of segments) {
-      const cleanSegmentText = segment.text.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1');
-      const matchedWords = keyWords.filter(word => cleanSegmentText.includes(word));
+    for (const segment of cleanSegmentTexts) {
+      const matchedWords = keyWords.filter(word => segment.cleanText.includes(word));
       
       // キーワードの50%以上がマッチした場合
       if (matchedWords.length / keyWords.length >= 0.5) {
@@ -180,9 +182,8 @@ export function findTimestampForText(
   // それでも見つからない場合、最初の10文字で検索（最後の手段）
   if (cleanSearchText.length >= 10) {
     const firstChars = cleanSearchText.substring(0, 10);
-    for (const segment of segments) {
-      const cleanSegmentText = segment.text.replace(/<em[^>]*>(.*?)<\/em>/gi, '$1');
-      if (cleanSegmentText.includes(firstChars)) {
+    for (const segment of cleanSegmentTexts) {
+      if (segment.cleanText.includes(firstChars)) {
         return {
           startTime: segment.startTime,
           endTime: segment.endTime,

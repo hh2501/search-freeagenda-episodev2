@@ -26,8 +26,8 @@ export async function GET(
   }
 
   try {
-    // インデックスが存在しない場合は作成
-    await initializeIndex();
+    // エピソード詳細APIでは、インデックス存在チェックをスキップしてパフォーマンスを向上
+    // インデックスが存在しない場合は、検索時にエラーが返されるので、その時点でエラーハンドリングする
 
     // エピソードを取得（検索クエリで取得）
     const getResponse = await client.search({
@@ -56,14 +56,15 @@ export async function GET(
     let highlights: { transcript_text?: string[]; description?: string[] } = {};
     let allMatchPositions: Array<{ text: string; field: string; position: number; timestamp?: { startTime: number; endTime: number } }> = [];
     
-    // VTTファイルからタイムスタンプ情報を取得（文字起こしの場合）
+    // VTTファイルからタイムスタンプ情報を取得（検索クエリがある場合のみ）
+    // 検索クエリがない場合は、タイムスタンプ情報は不要なのでスキップしてパフォーマンスを向上
     let timestampSegments: Array<{ startTime: number; endTime: number; text: string }> = [];
-    if (source.listen_url) {
+    if (searchQuery && searchQuery.trim() && source.listen_url) {
       try {
         // listen.styleのURLからVTTファイルのURLを構築
         const vttUrl = `${source.listen_url}/transcript.vtt`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // タイムアウトを5秒に短縮
         
         const vttResponse = await fetch(vttUrl, { 
           signal: controller.signal,
@@ -126,14 +127,19 @@ export async function GET(
             fields: {
               transcript_text: {
                 fragment_size: 200,
-                number_of_fragments: 50, // 多くのフラグメントを取得
+                number_of_fragments: 20, // フラグメント数を削減（50→20）
               },
               description: {
                 fragment_size: 200,
-                number_of_fragments: 10,
+                number_of_fragments: 5, // フラグメント数を削減（10→5）
               },
             },
           },
+          // パフォーマンス最適化: 必要なフィールドのみ取得
+          _source: {
+            includes: ['episode_id', 'title', 'description', 'published_at', 'listen_url', 'transcript_text'],
+          },
+          timeout: '5s', // タイムアウト設定
           size: 1,
         },
       });
