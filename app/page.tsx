@@ -72,7 +72,14 @@ function HomeContent() {
           return;
         }
 
-        setLoading(true);
+        // 戻るボタンで戻った場合は、キャッシュが効いている可能性が高いので
+        // ローディング状態を表示しない（サーバー側でキャッシュが効いている）
+        // ただし、初回検索時（queryが空）の場合はローディング状態を表示
+        const isFirstSearch = query === '';
+        
+        if (isFirstSearch) {
+          setLoading(true);
+        }
         setError(null);
         setHasSearched(true);
         setSortBy('relevance');
