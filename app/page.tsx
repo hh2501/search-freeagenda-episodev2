@@ -261,14 +261,14 @@ function HomeContent() {
               unoptimized
             />
           </div>
-          <h1 className="text-headline-large md:text-display-small font-bold mb-4 text-gray-900">
+          <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">
             フリーアジェンダのあの回
           </h1>
-          <p className="text-body-large text-gray-600 mb-4 font-medium">
+          <p className="text-body-medium text-gray-600 mb-4 font-medium">
             探している「あの回」を覚えているキーワードから検索
           </p>
           {latestEpisode && (
-            <div className="flex flex-col items-center pb-3 text-sm">
+            <div className="flex flex-col items-center pb-3 text-xs">
               <div className="min-h-6 text-gray-600">
                 最新反映回:{' '}
                 <a
