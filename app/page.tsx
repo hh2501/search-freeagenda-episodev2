@@ -74,8 +74,8 @@ function HomeContent() {
 
         // URLパラメータから検索クエリを読み取る場合は、戻るボタンで戻った可能性が高い
         // キャッシュが効いている可能性が高いので、ローディング状態を表示しない
-        // 初回検索時（queryが空 かつ resultsが空）の場合のみローディング状態を表示
-        const isFirstSearch = query === '' && results.length === 0;
+        // 初回検索時（queryが空 かつ resultsが空 かつ hasSearchedがfalse）の場合のみローディング状態を表示
+        const isFirstSearch = query === '' && results.length === 0 && !hasSearched;
         
         if (isFirstSearch) {
           setLoading(true);
