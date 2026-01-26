@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -32,6 +32,8 @@ function HomeContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isManualSearchRef = useRef(false);
 
   useEffect(() => {
     // 初回マウント時にランダムキーワードを設定
@@ -116,33 +118,7 @@ function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
-  useEffect(() => {
-    // スラッシュ（/）キーで検索バーにフォーカスを移動
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 検索バーが既にフォーカスされている場合、または他の入力フィールドがフォーカスされている場合は何もしない
-      const activeElement = document.activeElement as HTMLElement | null;
-      if (
-        activeElement?.tagName === 'INPUT' ||
-        activeElement?.tagName === 'TEXTAREA' ||
-        (activeElement && 'isContentEditable' in activeElement && activeElement.isContentEditable)
-      ) {
-        return;
-      }
-
-      // スラッシュ（/）キーが押された場合
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  const performSearch = async (searchQuery: string) => {
+  const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       return;
     }
@@ -186,10 +162,79 @@ function HomeContent() {
       setLoading(false);
       setIsInitialLoad(false);
     }
-  };
+  }, []);
+
+  // リアルタイム検索（debounce付き）
+  useEffect(() => {
+    // 手動検索（フォーム送信やEnterキー）の場合はスキップ
+    if (isManualSearchRef.current) {
+      isManualSearchRef.current = false;
+      return;
+    }
+
+    // URLパラメータからの検索の場合はスキップ（別のuseEffectで処理）
+    if (isInitialLoad) {
+      return;
+    }
+
+    // 既存のタイマーをクリア
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // クエリが空の場合は検索しない
+    if (!query.trim()) {
+      return;
+    }
+
+    // debounce: 500ms待機後に検索を実行
+    debounceTimerRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 500);
+
+    // クリーンアップ関数
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [query, isInitialLoad, performSearch]);
+
+  useEffect(() => {
+    // スラッシュ（/）キーで検索バーにフォーカスを移動
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 検索バーが既にフォーカスされている場合、または他の入力フィールドがフォーカスされている場合は何もしない
+      const activeElement = document.activeElement as HTMLElement | null;
+      if (
+        activeElement?.tagName === 'INPUT' ||
+        activeElement?.tagName === 'TEXTAREA' ||
+        (activeElement && 'isContentEditable' in activeElement && activeElement.isContentEditable)
+      ) {
+        return;
+      }
+
+      // スラッシュ（/）キーが押された場合
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 手動検索のフラグを設定（debounceをスキップ）
+    isManualSearchRef.current = true;
+    // 既存のdebounceタイマーをクリア
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     await performSearch(query);
   };
 
