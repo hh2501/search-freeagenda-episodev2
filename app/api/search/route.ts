@@ -6,6 +6,7 @@ import { getCachedResult, setCachedResult } from '@/lib/cache/search-cache';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const startTime = performance.now();
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
 
@@ -24,20 +25,26 @@ export async function GET(request: NextRequest) {
   const searchQuery = query.trim();
 
   // キャッシュから結果を取得
+  const cacheCheckStart = performance.now();
   const cachedResult = getCachedResult(searchQuery);
+  const cacheCheckTime = performance.now() - cacheCheckStart;
+  
   if (cachedResult) {
     // キャッシュヒット時は、キャッシュされた結果を返す
+    const totalTime = performance.now() - startTime;
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[CACHE HIT] Query: ${searchQuery}`);
+      console.log(`[CACHE HIT] Query: ${searchQuery}, Cache check: ${cacheCheckTime.toFixed(2)}ms, Total: ${totalTime.toFixed(2)}ms`);
     }
     return NextResponse.json(cachedResult);
   }
 
   try {
-    // インデックスが存在しない場合は作成
-    await initializeIndex();
+    // 検索APIでは、インデックス存在チェックをスキップしてパフォーマンスを向上
+    // インデックスが存在しない場合は、検索時にエラーが返されるので、その時点でエラーハンドリングする
+    const initIndexTime = 0; // スキップしたため0ms
 
     // 完全一致検索の解析: ダブルクォーテーション（""）で囲まれた部分を抽出
+    const queryParseStart = performance.now();
     const exactMatchPattern = /"([^"]+)"/g;
     const exactMatches: string[] = [];
     let processedQuery = searchQuery;
@@ -52,152 +59,103 @@ export async function GET(request: NextRequest) {
     
     // 残りのクエリから余分なスペースを削除
     processedQuery = processedQuery.replace(/\s+/g, ' ').trim();
+    const queryParseTime = performance.now() - queryParseStart;
 
-    // クエリの構築
-    const queryClauses: any[] = [];
-
-    // 完全一致検索がある場合
-    if (exactMatches.length > 0) {
-      exactMatches.forEach((exactPhrase) => {
-        // 完全一致検索: match_phraseでslop: 0を使用
-        queryClauses.push({
-          multi_match: {
-            query: exactPhrase,
-            fields: [
-              'title^10',        // 完全一致は最高の重み
-              'description^6',   // 説明文は6倍の重み
-              'transcript_text^4', // 文字起こしは4倍の重み
-            ],
-            type: 'phrase',     // フレーズマッチ
-            slop: 0,            // 完全一致（単語間の距離0）
-          },
-        });
-      });
-    }
-
-    // 通常検索（完全一致以外の部分がある場合
-    if (processedQuery && processedQuery.length > 0) {
-      // スペースで区切られたキーワードを分割
-      const keywords = processedQuery.split(/\s+/).filter(k => k.length > 0);
-      
-      if (keywords.length > 1) {
-        // 複数のキーワードがある場合、各キーワードをAND条件で検索
-        // 各キーワードが含まれる必要がある（must句）
-        keywords.forEach((keyword) => {
-          queryClauses.push({
-            multi_match: {
-              query: keyword,
-              fields: [
-                'title^3',
-                'description^2',
-                'transcript_text',
-              ],
-              type: 'best_fields',
-              operator: 'or', // 各キーワードは複数フィールドのいずれかに含まれればOK
-            },
-          });
-        });
-      } else {
-        // 単一キーワードの場合、従来のロジックを使用
-        queryClauses.push(
-          // フレーズマッチ: 検索語が完全に一致する場合を優先（高スコア）
-          {
-            multi_match: {
-              query: processedQuery,
-              fields: [
-                'title^5',        // タイトルは5倍の重み（フレーズマッチ）
-                'description^2',  // 説明文は2倍の重み
-                'transcript_text^3', // 文字起こしは3倍の重み
-              ],
-              type: 'phrase',     // フレーズマッチ（単語の順序と近接性を考慮）
-              slop: 0,            // 単語間の距離（0=完全一致）
-            },
-          },
-          // 単語マッチ: 検索語の各単語が含まれる場合（中スコア）
-          {
-            multi_match: {
-              query: processedQuery,
-              fields: [
-                'title^3',        // タイトルは3倍の重み
-                'description^2',   // 説明文は2倍の重み
-                'transcript_text', // 文字起こしは通常の重み
-              ],
-              type: 'best_fields',
-              operator: 'and',    // すべての単語が含まれる必要がある
-              minimum_should_match: '75%', // 75%以上の単語がマッチする必要がある
-            },
-          }
-        );
+    // クエリの構築（最適化: 重複処理を削減）
+    const queryBuildStart = performance.now();
+    
+    // キーワード分割を1回だけ実行
+    const keywords = processedQuery ? processedQuery.split(/\s+/).filter(k => k.length > 0) : [];
+    const hasMultipleKeywords = keywords.length > 1;
+    const allKeywords = [...exactMatches, ...keywords];
+    const hasAllKeywords = allKeywords.length > 1;
+    
+    // 完全一致検索用のクエリ構築ヘルパー関数
+    const createExactMatchQuery = (phrase: string) => ({
+      multi_match: {
+        query: phrase,
+        fields: ['title^10', 'description^6', 'transcript_text^4'],
+        type: 'phrase',
+        slop: 0,
+      },
+    });
+    
+    // 通常検索用のクエリ構築
+    const buildNormalQueries = (): any[] => {
+      if (!processedQuery || processedQuery.length === 0) {
+        return [];
       }
-    }
-
-    // 完全一致検索のみの場合、mustクエリとして扱う（必須）
-    // 通常検索のみまたは混合の場合は、shouldクエリとして扱う
-    const queryBody: any = {
-      bool: {},
-    };
-
-    if (exactMatches.length > 0 && !processedQuery) {
-      // 完全一致検索のみの場合
-      queryBody.bool.must = exactMatches.map((exactPhrase) => ({
-        multi_match: {
-          query: exactPhrase,
-          fields: [
-            'title^10',
-            'description^6',
-            'transcript_text^4',
-          ],
-          type: 'phrase',
-          slop: 0,
-        },
-      }));
-    } else {
-      // 通常検索または混合の場合
-      const keywords = processedQuery ? processedQuery.split(/\s+/).filter(k => k.length > 0) : [];
-      const hasMultipleKeywords = keywords.length > 1;
       
       if (hasMultipleKeywords) {
-        // 複数キーワードの場合、must句でAND条件にする
-        // 完全一致検索がある場合は、それもmust句に追加
-        if (exactMatches.length > 0) {
-          const exactMatchClauses = exactMatches.map((exactPhrase) => ({
+        // 複数キーワード: 各キーワードをAND条件で検索
+        return keywords.map((keyword) => ({
+          multi_match: {
+            query: keyword,
+            fields: ['title^3', 'description^2', 'transcript_text'],
+            type: 'best_fields',
+            operator: 'or',
+          },
+        }));
+      } else {
+        // 単一キーワード: フレーズマッチと単語マッチの両方
+        return [
+          {
             multi_match: {
-              query: exactPhrase,
-              fields: [
-                'title^10',
-                'description^6',
-                'transcript_text^4',
-              ],
+              query: processedQuery,
+              fields: ['title^5', 'description^2', 'transcript_text^3'],
               type: 'phrase',
               slop: 0,
             },
-          }));
-          queryBody.bool.must = [...exactMatchClauses, ...queryClauses];
-        } else {
-          queryBody.bool.must = queryClauses;
-        }
-      } else {
-        // 単一キーワードの場合、should句を使用
-        queryBody.bool.should = queryClauses;
-        queryBody.bool.minimum_should_match = exactMatches.length > 0 ? exactMatches.length : 1;
+          },
+          {
+            multi_match: {
+              query: processedQuery,
+              fields: ['title^3', 'description^2', 'transcript_text'],
+              type: 'best_fields',
+              operator: 'and',
+              minimum_should_match: '75%',
+            },
+          },
+        ];
       }
+    };
+    
+    // クエリボディの構築
+    const queryBody: any = { bool: {} };
+    const exactMatchClauses = exactMatches.map(createExactMatchQuery);
+    const normalQueries = buildNormalQueries();
+    
+    if (exactMatches.length > 0 && !processedQuery) {
+      // 完全一致検索のみ
+      queryBody.bool.must = exactMatchClauses;
+    } else if (hasMultipleKeywords || (exactMatches.length > 0 && processedQuery)) {
+      // 複数キーワードまたは混合検索: must句でAND条件
+      queryBody.bool.must = [...exactMatchClauses, ...normalQueries];
+    } else {
+      // 単一キーワードのみ: should句を使用
+      queryBody.bool.should = normalQueries;
+      queryBody.bool.minimum_should_match = 1;
     }
 
     // 複数キーワードの場合は、各キーワードがハイライトされるようにフラグメント数を増やす
-    // 完全一致検索と通常検索の両方を考慮
-    const keywords = processedQuery ? processedQuery.split(/\s+/).filter(k => k.length > 0) : [];
-    const allKeywords = [...exactMatches, ...keywords]; // 完全一致検索と通常検索のキーワードを結合
-    const hasMultipleKeywords = allKeywords.length > 1;
-    const numberOfFragments = hasMultipleKeywords ? Math.max(allKeywords.length, 3) : 1;
+    const numberOfFragments = hasAllKeywords ? Math.max(allKeywords.length, 3) : 1;
+    const queryBuildTime = performance.now() - queryBuildStart;
 
     // OpenSearchで全文検索を実行
+    const searchStart = performance.now();
     const response = await client.search({
       index: INDEX_NAME,
       body: {
         query: queryBody,
+        // パフォーマンス最適化: 必要なフィールドのみ取得
+        _source: {
+          includes: ['episode_id', 'title', 'description', 'published_at', 'listen_url', 'transcript_text'],
+        },
         highlight: {
           fields: {
-            title: {},
+            title: {
+              number_of_fragments: 0, // タイトルは全文をハイライト
+            },
             description: {
               fragment_size: 200,
               number_of_fragments: hasMultipleKeywords ? Math.max(allKeywords.length, 2) : 1,
@@ -207,17 +165,25 @@ export async function GET(request: NextRequest) {
               number_of_fragments: numberOfFragments,
             },
           },
+          // パフォーマンス最適化: ハイライトタグをシンプルに
+          pre_tags: ['<em>'],
+          post_tags: ['</em>'],
         },
         sort: [
           { _score: { order: 'desc' } },
           { published_at: { order: 'desc' } },
         ],
         size: 50,
+        // パフォーマンス最適化: タイムアウト設定（デフォルトより短く）
+        timeout: '5s',
       },
     });
 
+    const searchTime = performance.now() - searchStart;
+    
     // 検索結果を整形
     // OpenSearch 3.xでは、レスポンスが直接返される
+    const resultProcessStart = performance.now();
     const hits = (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
     
     const results = hits.map((hit: any) => {
@@ -535,13 +501,27 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const resultProcessTime = performance.now() - resultProcessStart;
+    
     const responseData = { results, count: results.length };
     
     // 検索結果をキャッシュに保存
+    const cacheSaveStart = performance.now();
     setCachedResult(searchQuery, responseData);
+    const cacheSaveTime = performance.now() - cacheSaveStart;
+    
+    const totalTime = performance.now() - startTime;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[CACHE MISS] Query: ${searchQuery}, Results: ${results.length}`);
+      console.log(`[PERFORMANCE] Query: ${searchQuery}`);
+      console.log(`  - Initialize index: ${initIndexTime.toFixed(2)}ms`);
+      console.log(`  - Query parsing: ${queryParseTime.toFixed(2)}ms`);
+      console.log(`  - Query building: ${queryBuildTime.toFixed(2)}ms`);
+      console.log(`  - OpenSearch search: ${searchTime.toFixed(2)}ms`);
+      console.log(`  - Result processing: ${resultProcessTime.toFixed(2)}ms`);
+      console.log(`  - Cache save: ${cacheSaveTime.toFixed(2)}ms`);
+      console.log(`  - Total: ${totalTime.toFixed(2)}ms`);
+      console.log(`  - Results: ${results.length}`);
     }
     
     return NextResponse.json(responseData);

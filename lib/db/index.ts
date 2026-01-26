@@ -115,24 +115,66 @@ export default client;
 // インデックス名
 export const INDEX_NAME = 'episodes';
 
+// インデックス存在チェックのキャッシュ（メモリ内）
+// 注意: サーバーレス環境ではインスタンスが再利用される場合のみ有効
+let indexExistsCache: boolean | null = null;
+let indexCheckPromise: Promise<boolean> | null = null;
+
+/**
+ * インデックスの存在をチェック（キャッシュ付き）
+ */
+async function checkIndexExists(): Promise<boolean> {
+  if (!client) {
+    throw new Error('OpenSearchクライアントが設定されていません。');
+  }
+
+  // キャッシュがある場合は即座に返す
+  if (indexExistsCache !== null) {
+    return indexExistsCache;
+  }
+
+  // 既にチェック中の場合は、そのPromiseを返す（重複チェックを防ぐ）
+  if (indexCheckPromise) {
+    return indexCheckPromise;
+  }
+
+  // インデックス存在チェックを実行
+  indexCheckPromise = (async () => {
+    try {
+      const existsResponse = await client!.indices.exists({ index: INDEX_NAME });
+      const exists = typeof existsResponse === 'boolean' 
+        ? existsResponse 
+        : (existsResponse as any).body || (existsResponse as any);
+      
+      indexExistsCache = exists;
+      return exists;
+    } finally {
+      indexCheckPromise = null;
+    }
+  })();
+
+  return indexCheckPromise;
+}
+
 // インデックスの初期化（存在しない場合は作成）
 export async function initializeIndex(): Promise<void> {
   if (!client) {
     throw new Error('OpenSearchクライアントが設定されていません。');
   }
 
-  // OpenSearch 3.xでは、exists()はbooleanまたはbodyプロパティを持つオブジェクトを返す
-  const existsResponse = await client.indices.exists({ index: INDEX_NAME });
-  const exists = typeof existsResponse === 'boolean' 
-    ? existsResponse 
-    : (existsResponse as any).body || (existsResponse as any);
+  // キャッシュされた存在チェック結果を使用
+  const exists = await checkIndexExists();
   
   if (!exists) {
-    // インデックスを作成（日本語全文検索用のマッピング設定）
+    // インデックスを作成（日本語全文検索用のマッピング設定 - パフォーマンス最適化版）
     await client.indices.create({
       index: INDEX_NAME,
       body: {
         settings: {
+          // パフォーマンス最適化: リフレッシュ間隔を長く設定（書き込み頻度が低い場合）
+          refresh_interval: '30s',
+          // パフォーマンス最適化: レプリカ数を0に設定（開発環境、または単一ノードの場合）
+          number_of_replicas: 0,
           analysis: {
             analyzer: {
               japanese: {
@@ -141,8 +183,8 @@ export async function initializeIndex(): Promise<void> {
                 char_filter: ['icu_normalizer'],
                 filter: [
                   'kuromoji_baseform',
-                  'kuromoji_part_of_speech',
-                  'kuromoji_stemmer',
+                  // パフォーマンス最適化: part_of_speechとstemmerを削除（検索速度優先）
+                  // 検索精度は若干下がるが、パフォーマンスが向上
                   'ja_stop',
                   'kuromoji_number',
                   'lowercase',
@@ -157,6 +199,8 @@ export async function initializeIndex(): Promise<void> {
             title: {
               type: 'text',
               analyzer: 'japanese',
+              // パフォーマンス最適化: normsを無効化（メモリ使用量削減）
+              norms: false,
               fields: {
                 keyword: { type: 'keyword' },
               },
@@ -164,6 +208,8 @@ export async function initializeIndex(): Promise<void> {
             description: {
               type: 'text',
               analyzer: 'japanese',
+              // パフォーマンス最適化: normsを無効化
+              norms: false,
             },
             published_at: { type: 'date' },
             listen_url: { type: 'keyword' },
@@ -172,6 +218,10 @@ export async function initializeIndex(): Promise<void> {
             transcript_text: {
               type: 'text',
               analyzer: 'japanese',
+              // パフォーマンス最適化: 大きなテキストフィールドの最適化
+              norms: false,
+              // パフォーマンス最適化: インデックスオプションを調整（位置情報を削減）
+              index_options: 'positions', // 'offsets'から'positions'に変更（ハイライトには十分）
             },
             created_at: { type: 'date' },
             updated_at: { type: 'date' },
@@ -179,5 +229,8 @@ export async function initializeIndex(): Promise<void> {
         },
       },
     });
+    
+    // インデックス作成後、キャッシュを更新
+    indexExistsCache = true;
   }
 }
