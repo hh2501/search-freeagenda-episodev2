@@ -11,6 +11,11 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "フリーアジェンダのあの回",
   description: "フリーアジェンダのエピソードを検索できます",
+  icons: {
+    icon: "/Thumbnail_image.jpg",
+    shortcut: "/Thumbnail_image.jpg",
+    apple: "/Thumbnail_image.jpg",
+  },
 };
 
 export default function RootLayout({
