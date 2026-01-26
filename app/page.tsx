@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import searchKeywords from '@/lib/search-keywords.json';
-import { getSearchHistory, addSearchHistory, removeSearchHistoryItem, clearSearchHistory, type SearchHistoryItem } from '@/lib/search-history';
 
 const keywords = searchKeywords as string[];
 
@@ -29,11 +28,8 @@ function HomeContent() {
   const [error, setError] = useState<string | null>(null);
   const [placeholder, setPlaceholder] = useState('キーワードを入力（例: エンジニア）');
   const [hasSearched, setHasSearched] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [sortBy, setSortBy] = useState<'relevance' | 'date-desc' | 'date-asc'>('relevance');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const historyRef = useRef<HTMLDivElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
 
@@ -41,9 +37,6 @@ function HomeContent() {
     // 初回マウント時にランダムキーワードを設定
     const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
     setPlaceholder(randomKeyword);
-    
-    // 検索履歴を読み込む
-    setSearchHistory(getSearchHistory());
 
     // 最新エピソード情報を取得
     const fetchLatestEpisode = async () => {
@@ -93,7 +86,6 @@ function HomeContent() {
           }
 
           setResults(data.results || []);
-          setShowHistory(false);
         } catch (err) {
           setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
           setResults([]);
@@ -187,13 +179,6 @@ function HomeContent() {
       }
 
       setResults(data.results || []);
-      
-      // 検索履歴に追加（URLパラメータからの自動検索の場合は追加しない）
-      if (!isInitialLoad) {
-        addSearchHistory(searchQuery);
-        setSearchHistory(getSearchHistory());
-      }
-      setShowHistory(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
       setResults([]);
@@ -207,54 +192,6 @@ function HomeContent() {
     e.preventDefault();
     await performSearch(query);
   };
-
-  // 検索履歴から選択して検索
-  const handleHistorySelect = (historyQuery: string) => {
-    setQuery(historyQuery);
-    setShowHistory(false);
-    // 検索を実行
-    setTimeout(() => {
-      const form = document.querySelector('form');
-      if (form) {
-        form.requestSubmit();
-      }
-    }, 0);
-  };
-
-  // 検索履歴の削除
-  const handleRemoveHistory = (e: React.MouseEvent, query: string) => {
-    e.stopPropagation();
-    removeSearchHistoryItem(query);
-    setSearchHistory(getSearchHistory());
-  };
-
-  // 検索履歴の全削除
-  const handleClearHistory = () => {
-    clearSearchHistory();
-    setSearchHistory([]);
-  };
-
-  // クリックアウトサイドで検索履歴を閉じる
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        showHistory &&
-        historyRef.current &&
-        !historyRef.current.contains(target) &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(target) &&
-        !(event.target as HTMLElement)?.closest('.md-search-form-button')
-      ) {
-        setShowHistory(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showHistory]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -319,7 +256,7 @@ function HomeContent() {
               alt="FREE AGENDA by Hikaru & Yamotty"
               width={400}
               height={400}
-              className="max-w-full h-auto rounded-xl shadow-md transition-all duration-200 ease-out hover:shadow-xl"
+              className="max-w-[200px] md:max-w-[300px] lg:max-w-[400px] h-auto rounded-xl shadow-md transition-all duration-200 ease-out hover:shadow-xl"
               priority
               unoptimized
             />
@@ -354,24 +291,13 @@ function HomeContent() {
               type="text"
               value={query}
               onChange={(e) => {
-                const newValue = e.target.value;
-                setQuery(newValue);
-                if (newValue === '' && searchHistory.length > 0) {
-                  setShowHistory(true);
-                } else if (newValue !== '') {
-                  setShowHistory(false);
-                }
+                setQuery(e.target.value);
               }}
               onKeyDown={(e) => {
                 // Enterキーで検索を実行
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleSearch(e as any);
-                }
-              }}
-              onFocus={() => {
-                if (searchHistory.length > 0) {
-                  setShowHistory(true);
                 }
               }}
               placeholder={placeholder}
@@ -446,74 +372,6 @@ function HomeContent() {
                 </svg>
               )}
             </button>
-            
-            {/* 検索履歴ドロップダウン（Material Design 3） */}
-            {showHistory && searchHistory.length > 0 && (
-              <div
-                ref={historyRef}
-                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200 shadow-lg z-[9999] max-h-80 overflow-y-auto"
-              >
-                  <div className="p-2">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                      <span className="text-label-medium font-semibold text-gray-600">最近の検索</span>
-                      <button
-                        type="button"
-                        onClick={handleClearHistory}
-                        className="text-label-medium text-gray-500 hover:text-gray-700 transition-colors rounded-sm px-2 py-1 hover:bg-gray-100"
-                      >
-                        すべて削除
-                      </button>
-                    </div>
-                    <div className="py-1">
-                      {searchHistory.map((item, index) => (
-                        <button
-                          key={`${item.query}-${item.timestamp}`}
-                          type="button"
-                          onClick={() => handleHistorySelect(item.query)}
-                          className="w-full flex items-center justify-between px-4 py-3 text-body-medium text-gray-700 hover:bg-gray-50 rounded-md transition-colors group"
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-400 flex-shrink-0"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            <span className="truncate">{item.query}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => handleRemoveHistory(e, item.query)}
-                            className="ml-2 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 rounded-sm hover:bg-gray-200"
-                            aria-label="履歴を削除"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
           </div>
         </form>
 
@@ -667,10 +525,10 @@ function HomeContent() {
                 )
               )}
 
-              <div className="mt-6 pt-4 border-t border-gray-200 flex gap-3">
+              <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                 <Link
                   href={`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ''}`}
-                  className="flex-1 md-outlined-button text-center"
+                  className="flex-1 md-outlined-button flex items-center justify-center text-center min-h-[50px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   エピソード詳細を見る
@@ -679,7 +537,7 @@ function HomeContent() {
                   href={result.listenUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 md-filled-button text-center"
+                  className="flex-1 md-filled-button flex items-center justify-center text-center min-h-[50px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   LISTENで聴く

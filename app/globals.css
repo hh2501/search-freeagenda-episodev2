@@ -106,7 +106,9 @@ body {
            text-sm font-medium
            border border-gray-300
            transition-all duration-200 ease-out
-           hover:bg-gray-50 active:bg-gray-100
+           hover:bg-gray-50 hover:border-freeagenda-dark hover:text-freeagenda-dark
+           active:bg-gray-100 active:border-freeagenda-dark/80
+           focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark
            disabled:cursor-not-allowed;
   }
   
