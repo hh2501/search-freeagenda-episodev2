@@ -92,3 +92,53 @@ export async function getAllEpisodes(): Promise<Episode[]> {
     transcriptUrl: hit._source.transcript_url,
   }));
 }
+
+/**
+ * エピソードのpublished_atを更新
+ */
+export async function updateEpisodePublishedAt(episodeId: string, publishedAt: Date): Promise<void> {
+  if (!client) {
+    throw new Error('OpenSearchクライアントが設定されていません。');
+  }
+
+  await client.update({
+    index: INDEX_NAME,
+    id: episodeId,
+    body: {
+      doc: {
+        published_at: publishedAt.toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    },
+    refresh: true,
+  });
+}
+
+/**
+ * タイトルでエピソードを検索してエピソードIDを取得
+ */
+export async function findEpisodeByTitle(titlePattern: string): Promise<string | null> {
+  if (!client) {
+    throw new Error('OpenSearchクライアントが設定されていません。');
+  }
+
+  const response = await client.search({
+    index: INDEX_NAME,
+    body: {
+      query: {
+        match: {
+          title: titlePattern,
+        },
+      },
+      size: 1,
+    },
+  });
+
+  const hits = (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
+  
+  if (hits.length === 0) {
+    return null;
+  }
+
+  return hits[0]._source.episode_id;
+}

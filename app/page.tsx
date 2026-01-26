@@ -35,6 +35,7 @@ function HomeContent() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
 
   useEffect(() => {
     // 初回マウント時にランダムキーワードを設定
@@ -43,6 +44,26 @@ function HomeContent() {
     
     // 検索履歴を読み込む
     setSearchHistory(getSearchHistory());
+
+    // 最新エピソード情報を取得
+    const fetchLatestEpisode = async () => {
+      try {
+        const response = await fetch('/api/latest-episode');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.episodeNumber && data.title && data.listenUrl) {
+            setLatestEpisode({
+              episodeNumber: data.episodeNumber,
+              title: data.title,
+              listenUrl: data.listenUrl,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('最新エピソード取得エラー:', error);
+      }
+    };
+    fetchLatestEpisode();
   }, []);
 
   // URLパラメータから検索クエリを読み取って自動検索
@@ -309,6 +330,18 @@ function HomeContent() {
           <p className="text-body-large text-gray-600 mb-4 font-medium">
             探している「あの回」を覚えているキーワードから検索
           </p>
+          {latestEpisode && (
+            <div className="flex flex-col items-center pb-3 text-sm">
+              <a
+                href={latestEpisode.listenUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-h-6 text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+              >
+                最新反映回: #{latestEpisode.episodeNumber} {latestEpisode.title.replace(/^#\d+_/, '')}
+              </a>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSearch} className="mb-8">
