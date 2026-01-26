@@ -72,10 +72,10 @@ function HomeContent() {
           return;
         }
 
-        // 戻るボタンで戻った場合は、キャッシュが効いている可能性が高いので
-        // ローディング状態を表示しない（サーバー側でキャッシュが効いている）
-        // ただし、初回検索時（queryが空）の場合はローディング状態を表示
-        const isFirstSearch = query === '';
+        // URLパラメータから検索クエリを読み取る場合は、戻るボタンで戻った可能性が高い
+        // キャッシュが効いている可能性が高いので、ローディング状態を表示しない
+        // 初回検索時（queryが空 かつ resultsが空）の場合のみローディング状態を表示
+        const isFirstSearch = query === '' && results.length === 0;
         
         if (isFirstSearch) {
           setLoading(true);
