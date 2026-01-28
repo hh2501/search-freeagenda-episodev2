@@ -5,11 +5,29 @@ import client, { INDEX_NAME } from '@/lib/db/index';
  * GET: すべてのエピソードを取得（チェック状態を含む）
  * チェックリストページで全エピソードを表示し、チェック状態を管理するために使用
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!client) {
     return NextResponse.json(
       { error: 'OpenSearchが設定されていません。' },
       { status: 503 }
+    );
+  }
+
+  // 認証チェック
+  const authHeader = request.headers.get('authorization');
+  const expectedPassword = process.env.CHECKLIST_PASSWORD;
+  
+  if (!expectedPassword) {
+    return NextResponse.json(
+      { error: '認証が設定されていません。' },
+      { status: 503 }
+    );
+  }
+
+  if (!authHeader || authHeader !== `Bearer ${expectedPassword}`) {
+    return NextResponse.json(
+      { error: '認証に失敗しました。' },
+      { status: 401 }
     );
   }
 

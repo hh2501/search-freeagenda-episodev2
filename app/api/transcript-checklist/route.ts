@@ -66,6 +66,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 認証チェック
+  const authHeader = request.headers.get('authorization');
+  const expectedPassword = process.env.CHECKLIST_PASSWORD;
+  
+  if (!expectedPassword) {
+    return NextResponse.json(
+      { error: '認証が設定されていません。' },
+      { status: 503 }
+    );
+  }
+
+  if (!authHeader || authHeader !== `Bearer ${expectedPassword}`) {
+    return NextResponse.json(
+      { error: '認証に失敗しました。' },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { episodeId, checked } = body;
