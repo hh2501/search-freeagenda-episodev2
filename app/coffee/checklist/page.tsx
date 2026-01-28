@@ -222,34 +222,18 @@ export default function Checklist() {
                     {checkedEpisodes.map((episode) => (
                       <div
                         key={`${episode.episodeNumber}-${episode.episodeId}`}
-                        className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-md"
+                        className="border-l-2 border-green-500 pl-3 py-1.5 bg-green-50 rounded-r"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-title-medium font-semibold text-gray-800">
-                            #{episode.episodeNumber} {episode.title}
-                          </div>
-                          <div className="text-label-small text-gray-500">
-                            {episode.checkedAt
-                              ? new Date(episode.checkedAt).toLocaleDateString(
-                                  "ja-JP",
-                                )
-                              : episode.publishedAt
-                                ? new Date(
-                                    episode.publishedAt,
-                                  ).toLocaleDateString("ja-JP")
-                                : ""}
-                          </div>
-                        </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-label-small px-2 py-1 rounded-md bg-green-100 text-green-800">
-                            チェック済み
+                          <span className="text-body-small text-gray-800">
+                            {episode.title}
                           </span>
                           {episode.episodeId && (
                             <Link
                               href={`/episode/${episode.episodeId}`}
                               className="text-label-small text-freeagenda-dark hover:underline"
                             >
-                              エピソードを見る
+                              見る
                             </Link>
                           )}
                         </div>
