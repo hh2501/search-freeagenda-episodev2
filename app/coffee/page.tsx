@@ -43,17 +43,13 @@ export default function Coffee() {
                 href="https://buymeacoffee.com/miozuma"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="md-filled-button inline-flex items-center gap-2"
+                className="inline-block hover:opacity-80 transition-opacity"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                </svg>
-                Buy Me a Coffee でコーヒーを奢る
+                <img
+                  src="/bmc-brand-logo.svg"
+                  alt="Buy Me a Coffee"
+                  className="h-10 w-auto"
+                />
               </a>
             </div>
 
