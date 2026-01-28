@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   const startTime = performance.now();
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('q');
+  const exactMatchParam = searchParams.get('exact') === '1';
 
   if (!query || query.trim() === '') {
     return NextResponse.json({ error: '検索クエリが必要です' }, { status: 400 });
@@ -23,17 +24,18 @@ export async function GET(request: NextRequest) {
   }
 
   const searchQuery = query.trim();
+  const cacheKey = exactMatchParam ? `${searchQuery}:exact` : searchQuery;
 
   // キャッシュから結果を取得
   const cacheCheckStart = performance.now();
-  const cachedResult = getCachedResult(searchQuery);
+  const cachedResult = getCachedResult(cacheKey);
   const cacheCheckTime = performance.now() - cacheCheckStart;
   
   if (cachedResult) {
     // キャッシュヒット時は、キャッシュされた結果を返す
     const totalTime = performance.now() - startTime;
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[CACHE HIT] Query: ${searchQuery}, Cache check: ${cacheCheckTime.toFixed(2)}ms, Total: ${totalTime.toFixed(2)}ms`);
+      console.log(`[CACHE HIT] Query: ${cacheKey}, Cache check: ${cacheCheckTime.toFixed(2)}ms, Total: ${totalTime.toFixed(2)}ms`);
     }
     return NextResponse.json(cachedResult);
   }
@@ -43,22 +45,30 @@ export async function GET(request: NextRequest) {
     // インデックスが存在しない場合は、検索時にエラーが返されるので、その時点でエラーハンドリングする
     const initIndexTime = 0; // スキップしたため0ms
 
-    // 完全一致検索の解析: ダブルクォーテーション（""）で囲まれた部分を抽出
+    // 完全一致検索の解析
     const queryParseStart = performance.now();
-    const exactMatchPattern = /"([^"]+)"/g;
-    const exactMatches: string[] = [];
+    let exactMatches: string[] = [];
     let processedQuery = searchQuery;
     
-    // ダブルクォーテーションで囲まれた部分を抽出
-    let match;
-    while ((match = exactMatchPattern.exec(searchQuery)) !== null) {
-      exactMatches.push(match[1]);
-      // 抽出した部分をクエリから削除（後で通常検索用に使用）
-      processedQuery = processedQuery.replace(match[0], '').trim();
+    if (exactMatchParam) {
+      // チェックボックスがONの場合は、クエリ全体を完全一致検索として扱う
+      const keywords = searchQuery.split(/\s+/).filter(k => k.length > 0);
+      exactMatches = keywords;
+      processedQuery = '';
+    } else {
+      // ダブルクォーテーション（""）で囲まれた部分を抽出（従来の動作）
+      const exactMatchPattern = /"([^"]+)"/g;
+      let match;
+      while ((match = exactMatchPattern.exec(searchQuery)) !== null) {
+        exactMatches.push(match[1]);
+        // 抽出した部分をクエリから削除（後で通常検索用に使用）
+        processedQuery = processedQuery.replace(match[0], '').trim();
+      }
+      
+      // 残りのクエリから余分なスペースを削除
+      processedQuery = processedQuery.replace(/\s+/g, ' ').trim();
     }
     
-    // 残りのクエリから余分なスペースを削除
-    processedQuery = processedQuery.replace(/\s+/g, ' ').trim();
     const queryParseTime = performance.now() - queryParseStart;
 
     // クエリの構築（最適化: 重複処理を削減）
@@ -507,7 +517,7 @@ export async function GET(request: NextRequest) {
     
     // 検索結果をキャッシュに保存
     const cacheSaveStart = performance.now();
-    setCachedResult(searchQuery, responseData);
+    setCachedResult(cacheKey, responseData);
     const cacheSaveTime = performance.now() - cacheSaveStart;
     
     const totalTime = performance.now() - startTime;

@@ -29,6 +29,7 @@ function HomeContent() {
   const [placeholder, setPlaceholder] = useState('キーワードを入力（例: エンジニア）');
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState<'relevance' | 'date-desc' | 'date-asc'>('relevance');
+  const [exactMatchMode, setExactMatchMode] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [latestEpisode, setLatestEpisode] = useState<{ episodeNumber: string | null; title: string; listenUrl: string } | null>(null);
@@ -62,8 +63,11 @@ function HomeContent() {
   // URLパラメータから検索クエリを読み取って自動検索
   useEffect(() => {
     const urlQuery = searchParams.get('q');
+    const urlExactMatch = searchParams.get('exact') === '1';
+    
     if (urlQuery && urlQuery !== query) {
       setQuery(urlQuery);
+      setExactMatchMode(urlExactMatch);
       setIsInitialLoad(true);
       
       // 自動検索を実行
@@ -85,7 +89,12 @@ function HomeContent() {
         setSortBy('relevance');
 
         try {
-          const response = await fetch(`/api/search?q=${encodeURIComponent(urlQuery)}`);
+          const params = new URLSearchParams();
+          params.set('q', urlQuery);
+          if (urlExactMatch) {
+            params.set('exact', '1');
+          }
+          const response = await fetch(`/api/search?${params.toString()}`);
           const data = await response.json();
 
           if (!response.ok) {
@@ -93,6 +102,24 @@ function HomeContent() {
           }
 
           setResults(data.results || []);
+          
+          // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
+          requestAnimationFrame(() => {
+            if (typeof window !== 'undefined') {
+              const lastClickedId = sessionStorage.getItem('lastClickedEpisodeId');
+              if (lastClickedId) {
+                const element = document.getElementById(`episode-${lastClickedId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  // スクロール後にハイライト表示（視覚的にわかりやすく）
+                  element.classList.add('ring-2', 'ring-freeagenda-dark', 'ring-offset-2');
+                  setTimeout(() => {
+                    element.classList.remove('ring-2', 'ring-freeagenda-dark', 'ring-offset-2');
+                  }, 2000);
+                }
+              }
+            }
+          });
         } catch (err) {
           setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
           setResults([]);
@@ -123,7 +150,7 @@ function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
-  const performSearch = async (searchQuery: string) => {
+  const performSearch = async (searchQuery: string, exactMatch: boolean = false) => {
     if (!searchQuery.trim()) {
       return;
     }
@@ -134,7 +161,12 @@ function HomeContent() {
     setSortBy('relevance'); // 新しい検索時は関連度順にリセット
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+      const params = new URLSearchParams();
+      params.set('q', searchQuery);
+      if (exactMatch) {
+        params.set('exact', '1');
+      }
+      const response = await fetch(`/api/search?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -160,6 +192,24 @@ function HomeContent() {
       }
 
       setResults(data.results || []);
+      
+      // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
+      requestAnimationFrame(() => {
+        if (typeof window !== 'undefined') {
+          const lastClickedId = sessionStorage.getItem('lastClickedEpisodeId');
+          if (lastClickedId) {
+            const element = document.getElementById(`episode-${lastClickedId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // スクロール後にハイライト表示（視覚的にわかりやすく）
+              element.classList.add('ring-2', 'ring-freeagenda-dark', 'ring-offset-2');
+              setTimeout(() => {
+                element.classList.remove('ring-2', 'ring-freeagenda-dark', 'ring-offset-2');
+              }, 2000);
+            }
+          }
+        }
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : '検索中にエラーが発生しました');
       setResults([]);
@@ -199,12 +249,16 @@ function HomeContent() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     // URLパラメータを更新して検索状態を保存（ブラウザの戻るボタンで復元可能にする）
+    const params = new URLSearchParams();
     if (query.trim()) {
-      router.push(`/?q=${encodeURIComponent(query)}`, { scroll: false });
-    } else {
-      router.push('/', { scroll: false });
+      params.set('q', query);
     }
-    await performSearch(query);
+    if (exactMatchMode) {
+      params.set('exact', '1');
+    }
+    const queryString = params.toString();
+    router.push(queryString ? `/?${queryString}` : '/', { scroll: false });
+    await performSearch(query, exactMatchMode);
   };
 
   const formatDate = (dateString: string) => {
@@ -389,41 +443,45 @@ function HomeContent() {
           </div>
         </form>
 
+        {/* 検索モード選択チェックボックス */}
+        <div className="mb-6 flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={exactMatchMode}
+              onChange={(e) => setExactMatchMode(e.target.checked)}
+              className="w-4 h-4 text-freeagenda-dark border-gray-300 rounded focus:ring-freeagenda-dark focus:ring-2"
+              disabled={loading}
+            />
+            <span className="text-body-medium text-gray-700">
+              完全一致検索
+            </span>
+          </label>
+        </div>
+
         {(query === '' || (query !== '' && !hasSearched)) && (
           <div className="mt-6 md-outlined-card">
               <h3 className="text-title-large font-semibold text-gray-800 mb-6">検索のコツ</h3>
             
             <div className="space-y-6">
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
-                <h4 className="text-title-medium font-semibold text-gray-800 mb-2">通常の検索</h4>
-                <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  キーワードをそのまま入力します。キーワードを含むエピソードが幅広く表示されます。
-                </p>
-                <p className="text-body-medium text-gray-600">
-                  <strong>例：</strong><code className="md-code">社会</code> と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます。
+                <h4 className="text-title-medium font-semibold text-gray-800 mb-2">部分検索（デフォルト）</h4>
+                <p className="text-body-medium text-gray-600 leading-relaxed">
+                  キーワードをそのまま入力します。キーワードを含むエピソードが幅広く表示されます。<strong>例：</strong><code className="md-code">社会</code> と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます。
                 </p>
               </div>
 
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
                 <h4 className="text-title-medium font-semibold text-gray-800 mb-2">完全一致検索</h4>
-                <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  キーワードを <code className="md-code">&quot;&quot;</code>（ダブルクォーテーション）で囲みます。キーワードに完全一致するエピソードのみを表示します。
-                </p>
-                <p className="text-body-medium text-gray-600">
-                  <strong>例：</strong><code className="md-code">&quot;社会&quot;</code> と入力すると、「社会」という文字列を含むエピソードが表示されます。「会社員」など、文字の並びが異なるものは除外されます。
+                <p className="text-body-medium text-gray-600 leading-relaxed">
+                  「完全一致検索」チェックボックスにチェックを入れると、入力したキーワードに完全一致するエピソードのみを表示します。<strong>例：</strong><code className="md-code">社会</code> と入力してチェックを入れると、「社会」という文字列を含むエピソードが表示されます。「会社員」など、文字の並びが異なるものは除外されます。
                 </p>
               </div>
 
               <div className="border-l-4 border-freeagenda-light pl-4 py-2">
                 <h4 className="text-title-medium font-semibold text-gray-800 mb-2">キーワードの組み合わせ</h4>
-                <p className="text-body-medium text-gray-600 mb-3 leading-relaxed">
-                  複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。
-                </p>
-                <p className="text-body-medium text-gray-600 mb-2">
-                  <strong>例：</strong><code className="md-code">&quot;社会&quot; &quot;資本&quot;</code> → 両方のキーワードに完全一致するエピソードが表示されます。
-                </p>
-                <p className="text-body-medium text-gray-600">
-                  <strong>例：</strong><code className="md-code">&quot;社会&quot; 資本</code> → 「社会」に完全一致し、「資本」を含むエピソードが表示されます。
+                <p className="text-body-medium text-gray-600 leading-relaxed">
+                  複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。<strong>例：</strong><code className="md-code">社会 資本</code> → 両方のキーワードを含むエピソードが表示されます。完全一致検索をONにすると、すべてのキーワードに完全一致するエピソードのみが表示されます。
                 </p>
               </div>
             </div>
@@ -485,6 +543,10 @@ function HomeContent() {
                 if ((e.target as HTMLElement).closest('a, button')) {
                   return;
                 }
+                // 最後にクリックした検索結果のIDを保存（戻ったときにスクロール位置を復元するため）
+                if (typeof window !== 'undefined') {
+                  sessionStorage.setItem('lastClickedEpisodeId', result.episodeId);
+                }
                 router.push(`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ''}`);
               }}
               onKeyDown={(e) => {
@@ -494,6 +556,10 @@ function HomeContent() {
                 }
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
+                  // 最後にクリックした検索結果のIDを保存（戻ったときにスクロール位置を復元するため）
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('lastClickedEpisodeId', result.episodeId);
+                  }
                   router.push(`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ''}`);
                 }
               }}
@@ -501,6 +567,7 @@ function HomeContent() {
               role="button"
               aria-label={`エピソードを開く: ${result.title.replace(/<[^>]*>/g, '')}`}
               data-episode-id={result.episodeId}
+              id={`episode-${result.episodeId}`}
             >
               <h2 className="text-title-large font-bold mb-3">
                 <Link
@@ -603,14 +670,12 @@ function HomeContent() {
                 データ同期ページ
               </a>
             )}
-            <a
-              href="https://www.paypal.com/paypalme/miozuma"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/coffee"
               className="md-text-button"
             >
-              寄付する
-            </a>
+              コーヒーを奢る
+            </Link>
           </div>
         </div>
       </div>
