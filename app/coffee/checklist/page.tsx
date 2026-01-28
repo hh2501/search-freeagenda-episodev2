@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-interface CheckedEpisode {
+interface ChecklistEpisode {
   episodeId: string;
   episodeNumber: string;
   title: string;
-  checkedAt: string;
+  publishedAt: string;
+  checked: boolean;
+  checkedAt: string | null;
 }
 
 export default function Checklist() {
-  const [checkedEpisodes, setCheckedEpisodes] = useState<CheckedEpisode[]>([]);
+  const [allEpisodes, setAllEpisodes] = useState<ChecklistEpisode[]>([]);
+  const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -20,12 +23,11 @@ export default function Checklist() {
     const fetchChecklist = async () => {
       try {
         // GitHubのraw URLからチェックリストファイルを取得
-        // 環境変数でURLを設定可能にするか、デフォルトのパスを使用
-        const checklistUrl = process.env.NEXT_PUBLIC_CHECKLIST_URL || 
+        const checklistUrl =
+          process.env.NEXT_PUBLIC_CHECKLIST_URL ||
           "https://raw.githubusercontent.com/hh2501/search-freeagenda-episodev2/main/public/transcript-checklist.json";
-        
+
         const response = await fetch(checklistUrl, {
-          // キャッシュを無効化して最新のデータを取得
           cache: "no-store",
         });
 
@@ -34,16 +36,64 @@ export default function Checklist() {
         }
 
         const data = await response.json();
-        
-        // データ形式: { episodes: [...], lastUpdated: "..." }
+
+        // エピソードIDが空の場合は、APIから取得を試みる
+        const episodesWithoutId = data.episodes.filter(
+          (ep: ChecklistEpisode) => !ep.episodeId
+        );
+
+        if (episodesWithoutId.length > 0) {
+          try {
+            const idsResponse = await fetch(
+              "/api/transcript-checklist/episode-ids",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ episodes: episodesWithoutId }),
+              }
+            );
+
+            if (idsResponse.ok) {
+              const idsData = await idsResponse.json();
+              const idMap = new Map<string, string>();
+              idsData.episodes.forEach((ep: ChecklistEpisode) => {
+                if (ep.episodeId) {
+                  idMap.set(ep.episodeNumber, ep.episodeId);
+                }
+              });
+
+              // エピソードIDを更新
+              data.episodes = data.episodes.map((ep: ChecklistEpisode) => {
+                if (!ep.episodeId && idMap.has(ep.episodeNumber)) {
+                  return { ...ep, episodeId: idMap.get(ep.episodeNumber) || "" };
+                }
+                return ep;
+              });
+            }
+          } catch (err) {
+            console.error("エピソードID取得エラー:", err);
+            // エラーが発生しても続行
+          }
+        }
+
         // エピソード番号でソート（日付の若い順）
-        const sortedEpisodes = (data.episodes || []).sort((a: CheckedEpisode, b: CheckedEpisode) => {
-          const numA = parseInt(a.episodeNumber) || 0;
-          const numB = parseInt(b.episodeNumber) || 0;
-          return numA - numB;
-        });
+        const sortedEpisodes = (data.episodes || []).sort(
+          (a: ChecklistEpisode, b: ChecklistEpisode) => {
+            const numA = parseInt(a.episodeNumber) || 0;
+            const numB = parseInt(b.episodeNumber) || 0;
+            return numA - numB;
+          }
+        );
+
+        setAllEpisodes(sortedEpisodes);
         
-        setCheckedEpisodes(sortedEpisodes);
+        // チェック済みのエピソードのみを抽出
+        const checked = sortedEpisodes.filter(
+          (ep: ChecklistEpisode) => ep.checked === true
+        );
+        setCheckedEpisodes(checked);
         setLastUpdated(data.lastUpdated || null);
       } catch (err) {
         console.error("チェックリスト取得エラー:", err);
@@ -90,8 +140,10 @@ export default function Checklist() {
               エピソードの文字起こしの誤字脱字や表記の揺れを手動でチェックしたエピソードの一覧です。
             </p>
             <p className="text-body-medium text-gray-600 mb-6">
-              チェックリストは<code className="md-code">public/transcript-checklist.json</code>ファイルで管理されています。
-              このファイルを編集してGitHubにプッシュすると、サイト上に反映されます。
+              チェックリストは
+              <code className="md-code">public/transcript-checklist.json</code>
+              ファイルで管理されています。
+              このファイルの<code className="md-code">checked</code>フィールドを<code className="md-code">true</code>に設定してGitHubにプッシュすると、サイト上に反映されます。
             </p>
 
             {lastUpdated && (
@@ -135,50 +187,66 @@ export default function Checklist() {
                   チェックリストファイルが見つかりませんでした。
                 </p>
               </div>
-            ) : checkedEpisodes.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-body-medium text-gray-600 mb-4">
-                  まだチェック済みのエピソードはありません。
-                </p>
-                <p className="text-body-small text-gray-500">
-                  チェック作業は継続的に進めています。
-                </p>
-              </div>
             ) : (
               <div className="space-y-4">
                 <div className="mb-4">
                   <p className="text-body-medium text-gray-600">
-                    チェック済み: {checkedEpisodes.length}件
+                    チェック済み: {checkedEpisodes.length}件 / 全{allEpisodes.length}件
                   </p>
                 </div>
-                {checkedEpisodes.map((episode) => (
-                  <div
-                    key={episode.episodeId}
-                    className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-md"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-title-medium font-semibold text-gray-800">
-                        #{episode.episodeNumber} {episode.title}
-                      </div>
-                      <div className="text-label-small text-gray-500">
-                        {new Date(episode.checkedAt).toLocaleDateString(
-                          "ja-JP",
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-label-small px-2 py-1 rounded-md bg-green-100 text-green-800">
-                        チェック済み
-                      </span>
-                      <Link
-                        href={`/episode/${episode.episodeId}`}
-                        className="text-label-small text-freeagenda-dark hover:underline"
-                      >
-                        エピソードを見る
-                      </Link>
-                    </div>
+
+                {checkedEpisodes.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-body-medium text-gray-600 mb-4">
+                      まだチェック済みのエピソードはありません。
+                    </p>
+                    <p className="text-body-small text-gray-500">
+                      JSONファイルの<code className="md-code">checked</code>フィールドを<code className="md-code">true</code>に設定してください。
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <>
+                    <h2 className="text-title-large font-semibold text-gray-800 mb-4">
+                      チェック済みエピソード
+                    </h2>
+                    {checkedEpisodes.map((episode) => (
+                      <div
+                        key={`${episode.episodeNumber}-${episode.episodeId}`}
+                        className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-md"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-title-medium font-semibold text-gray-800">
+                            #{episode.episodeNumber} {episode.title}
+                          </div>
+                          <div className="text-label-small text-gray-500">
+                            {episode.checkedAt
+                              ? new Date(episode.checkedAt).toLocaleDateString(
+                                  "ja-JP"
+                                )
+                              : episode.publishedAt
+                                ? new Date(episode.publishedAt).toLocaleDateString(
+                                    "ja-JP"
+                                  )
+                                : ""}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-label-small px-2 py-1 rounded-md bg-green-100 text-green-800">
+                            チェック済み
+                          </span>
+                          {episode.episodeId && (
+                            <Link
+                              href={`/episode/${episode.episodeId}`}
+                              className="text-label-small text-freeagenda-dark hover:underline"
+                            >
+                              エピソードを見る
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
