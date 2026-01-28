@@ -5,7 +5,7 @@
       "episodeNumber": "1",
       "title": "#1 ドキュメントの価値",
       "publishedAt": "2020-01-21T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
@@ -13,7 +13,7 @@
       "episodeNumber": "2",
       "title": "#2 海外ソースのうまい使い方",
       "publishedAt": "2020-01-22T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {

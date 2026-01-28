@@ -14,7 +14,9 @@ interface ChecklistEpisode {
 
 export default function Checklist() {
   const [allEpisodes, setAllEpisodes] = useState<ChecklistEpisode[]>([]);
-  const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>([]);
+  const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function Checklist() {
 
         // エピソードIDが空の場合は、APIから取得を試みる
         const episodesWithoutId = data.episodes.filter(
-          (ep: ChecklistEpisode) => !ep.episodeId
+          (ep: ChecklistEpisode) => !ep.episodeId,
         );
 
         if (episodesWithoutId.length > 0) {
@@ -52,7 +54,7 @@ export default function Checklist() {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ episodes: episodesWithoutId }),
-              }
+              },
             );
 
             if (idsResponse.ok) {
@@ -67,7 +69,10 @@ export default function Checklist() {
               // エピソードIDを更新
               data.episodes = data.episodes.map((ep: ChecklistEpisode) => {
                 if (!ep.episodeId && idMap.has(ep.episodeNumber)) {
-                  return { ...ep, episodeId: idMap.get(ep.episodeNumber) || "" };
+                  return {
+                    ...ep,
+                    episodeId: idMap.get(ep.episodeNumber) || "",
+                  };
                 }
                 return ep;
               });
@@ -84,14 +89,14 @@ export default function Checklist() {
             const numA = parseInt(a.episodeNumber) || 0;
             const numB = parseInt(b.episodeNumber) || 0;
             return numA - numB;
-          }
+          },
         );
 
         setAllEpisodes(sortedEpisodes);
-        
+
         // チェック済みのエピソードのみを抽出
         const checked = sortedEpisodes.filter(
-          (ep: ChecklistEpisode) => ep.checked === true
+          (ep: ChecklistEpisode) => ep.checked === true,
         );
         setCheckedEpisodes(checked);
         setLastUpdated(data.lastUpdated || null);
@@ -142,8 +147,10 @@ export default function Checklist() {
             <p className="text-body-medium text-gray-600 mb-6">
               チェックリストは
               <code className="md-code">public/transcript-checklist.json</code>
-              ファイルで管理されています。
-              このファイルの<code className="md-code">checked</code>フィールドを<code className="md-code">true</code>に設定してGitHubにプッシュすると、サイト上に反映されます。
+              ファイルで管理されています。 このファイルの
+              <code className="md-code">checked</code>フィールドを
+              <code className="md-code">true</code>
+              に設定してGitHubにプッシュすると、サイト上に反映されます。
             </p>
 
             {lastUpdated && (
@@ -191,7 +198,8 @@ export default function Checklist() {
               <div className="space-y-4">
                 <div className="mb-4">
                   <p className="text-body-medium text-gray-600">
-                    チェック済み: {checkedEpisodes.length}件 / 全{allEpisodes.length}件
+                    チェック済み: {checkedEpisodes.length}件 / 全
+                    {allEpisodes.length}件
                   </p>
                 </div>
 
@@ -201,7 +209,9 @@ export default function Checklist() {
                       まだチェック済みのエピソードはありません。
                     </p>
                     <p className="text-body-small text-gray-500">
-                      JSONファイルの<code className="md-code">checked</code>フィールドを<code className="md-code">true</code>に設定してください。
+                      JSONファイルの<code className="md-code">checked</code>
+                      フィールドを<code className="md-code">true</code>
+                      に設定してください。
                     </p>
                   </div>
                 ) : (
@@ -221,12 +231,12 @@ export default function Checklist() {
                           <div className="text-label-small text-gray-500">
                             {episode.checkedAt
                               ? new Date(episode.checkedAt).toLocaleDateString(
-                                  "ja-JP"
+                                  "ja-JP",
                                 )
                               : episode.publishedAt
-                                ? new Date(episode.publishedAt).toLocaleDateString(
-                                    "ja-JP"
-                                  )
+                                ? new Date(
+                                    episode.publishedAt,
+                                  ).toLocaleDateString("ja-JP")
                                 : ""}
                           </div>
                         </div>
