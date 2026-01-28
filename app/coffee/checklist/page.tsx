@@ -144,14 +144,6 @@ export default function Checklist() {
             <p className="text-body-large text-gray-700 leading-relaxed mb-6">
               エピソードの文字起こしの誤字脱字や表記の揺れを手動でチェックしたエピソードの一覧です。
             </p>
-            <p className="text-body-medium text-gray-600 mb-6">
-              チェックリストは
-              <code className="md-code">public/transcript-checklist.json</code>
-              ファイルで管理されています。 このファイルの
-              <code className="md-code">checked</code>フィールドを
-              <code className="md-code">true</code>
-              に設定してGitHubにプッシュすると、サイト上に反映されます。
-            </p>
 
             {lastUpdated && (
               <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
