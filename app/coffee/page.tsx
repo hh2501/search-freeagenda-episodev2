@@ -23,10 +23,10 @@ export default function Coffee() {
     script.setAttribute("data-outline-color", "#000000");
     script.setAttribute("data-font-color", "#000000");
     script.setAttribute("data-coffee-color", "#ffffff");
-    script.async = true;
+    // asyncを外して通常の読み込みにする（document.write()を使用するため）
 
-    // headに追加
-    document.head.appendChild(script);
+    // bodyに追加（Buy Me a Coffeeのスクリプトはbodyに追加する必要がある）
+    document.body.appendChild(script);
 
     // クリーンアップ関数
     return () => {
@@ -76,7 +76,10 @@ export default function Coffee() {
               より正確な検索結果を提供するため、継続的に改善を続けています。もしこのサイトが役に立ったら、コーヒーを奢っていただけると嬉しいです。
             </p>
 
-            <div className="flex justify-center mb-8" id="bmc-button-container"></div>
+            <div
+              className="flex justify-center mb-8"
+              id="bmc-button-container"
+            ></div>
 
             <div className="mt-8 pt-8 border-t border-gray-200">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
