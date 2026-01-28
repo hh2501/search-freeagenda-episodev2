@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Script from "next/script";
 
 export default function Coffee() {
   return (
@@ -39,18 +40,20 @@ export default function Coffee() {
             </p>
 
             <div className="flex justify-center mb-8">
-              <a
-                href="https://buymeacoffee.com/miozuma"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block hover:opacity-80 transition-opacity"
-              >
-                <img
-                  src="/bmc-brand-logo.svg"
-                  alt="Buy Me a Coffee"
-                  className="h-10 w-auto"
-                />
-              </a>
+              <div id="bmc-button-container"></div>
+              <Script
+                src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+                data-name="bmc-button"
+                data-slug="miozuma"
+                data-color="#FFDD00"
+                data-emoji=""
+                data-font="Poppins"
+                data-text="Buy me a coffee"
+                data-outline-color="#000000"
+                data-font-color="#000000"
+                data-coffee-color="#ffffff"
+                strategy="afterInteractive"
+              />
             </div>
 
             <div className="mt-8 pt-8 border-t border-gray-200">
