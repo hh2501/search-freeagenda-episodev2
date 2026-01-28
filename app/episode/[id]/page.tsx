@@ -300,24 +300,14 @@ export default function EpisodeDetail() {
             {formatDate(episode.publishedAt)}
           </div>
 
-          <div className="flex gap-3 mb-8">
-            <a
-              href={episode.listenUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="md-filled-button inline-block"
-            >
-              LISTENで聴く
-            </a>
-            {episode.transcriptText && (
-              <button
-                onClick={handleEditClick}
-                className="md-outlined-button"
-              >
-                文字起こしを編集
-              </button>
-            )}
-          </div>
+          <a
+            href={episode.listenUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="md-filled-button inline-block mb-8"
+          >
+            LISTENで聴く
+          </a>
 
           {episode.description && (
             <div className="mb-8">
@@ -420,7 +410,8 @@ export default function EpisodeDetail() {
             </div>
           )}
 
-          {episode.transcriptText && (
+          {/* 文字起こしセクション（認証済みの場合のみ表示） */}
+          {isAuthenticated && episode.transcriptText && (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-title-large font-semibold text-gray-800">
@@ -476,6 +467,18 @@ export default function EpisodeDetail() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* 文字起こし編集ボタン（ページ下部に小さく表示） */}
+          {episode.transcriptText && (
+            <div className="mt-8 pt-8 border-t border-gray-200 text-center">
+              <button
+                onClick={handleEditClick}
+                className="text-label-small text-gray-500 hover:text-gray-700 underline"
+              >
+                文字起こしを編集
+              </button>
             </div>
           )}
         </div>
