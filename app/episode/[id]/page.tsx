@@ -473,12 +473,17 @@ export default function EpisodeDetail() {
           {/* 文字起こし編集ボタン（ページ下部に小さく表示） */}
           {episode.transcriptText && (
             <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-              <button
-                onClick={handleEditClick}
-                className="text-label-small text-gray-500 hover:text-gray-700 underline"
-              >
-                文字起こしを編集
-              </button>
+              <div className="flex flex-col items-center gap-1">
+                <button
+                  onClick={handleEditClick}
+                  className="text-label-small text-gray-500 hover:text-gray-700 underline"
+                >
+                  文字起こしを編集
+                </button>
+                <span className="text-label-small text-gray-400">
+                  （管理者のみ）
+                </span>
+              </div>
             </div>
           )}
         </div>
