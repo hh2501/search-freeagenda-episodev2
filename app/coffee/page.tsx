@@ -3,41 +3,6 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-export default function Coffee() {
-  useEffect(() => {
-    // Buy Me a Coffeeのスクリプトが既に読み込まれているかチェック
-    if (document.querySelector('script[data-name="bmc-button"]')) {
-      return;
-    }
-
-    // scriptタグを作成して追加
-    const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js";
-    script.setAttribute("data-name", "bmc-button");
-    script.setAttribute("data-slug", "miozuma");
-    script.setAttribute("data-color", "#FFDD00");
-    script.setAttribute("data-emoji", "");
-    script.setAttribute("data-font", "Poppins");
-    script.setAttribute("data-text", "Buy me a coffee");
-    script.setAttribute("data-outline-color", "#000000");
-    script.setAttribute("data-font-color", "#000000");
-    script.setAttribute("data-coffee-color", "#ffffff");
-    script.async = true;
-
-    document.body.appendChild(script);
-
-    // クリーンアップ関数
-    return () => {
-      const existingScript = document.querySelector(
-        'script[data-name="bmc-button"]'
-      );
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-    };
-  }, []);
-
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -75,9 +40,7 @@ export default function Coffee() {
               より正確な検索結果を提供するため、継続的に改善を続けています。もしこのサイトが役に立ったら、コーヒーを奢っていただけると嬉しいです。
             </p>
 
-            <div className="flex justify-center mb-8">
-              <div id="bmc-button-container"></div>
-            </div>
+            <div className="flex justify-center mb-8" id="bmc-button-container"></div>
 
             <div className="mt-8 pt-8 border-t border-gray-200">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
