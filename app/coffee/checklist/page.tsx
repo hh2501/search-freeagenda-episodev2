@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface CheckedEpisode {
   episodeId: string;
   episodeNumber: string;
   title: string;
   checkedAt: string;
-  status: 'checked' | 'in-progress';
+  status: "checked" | "in-progress";
 }
 
 export default function Checklist() {
@@ -102,16 +102,22 @@ export default function Checklist() {
                         #{episode.episodeNumber} {episode.title}
                       </div>
                       <div className="text-label-small text-gray-500">
-                        {new Date(episode.checkedAt).toLocaleDateString('ja-JP')}
+                        {new Date(episode.checkedAt).toLocaleDateString(
+                          "ja-JP",
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-label-small px-2 py-1 rounded-md ${
-                        episode.status === 'checked'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {episode.status === 'checked' ? 'チェック済み' : 'チェック中'}
+                      <span
+                        className={`text-label-small px-2 py-1 rounded-md ${
+                          episode.status === "checked"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {episode.status === "checked"
+                          ? "チェック済み"
+                          : "チェック中"}
                       </span>
                       <Link
                         href={`/episode/${episode.episodeId}`}
