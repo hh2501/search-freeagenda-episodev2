@@ -17,6 +17,7 @@ export default function Checklist() {
   const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>(
     [],
   );
+  const [totalEpisodes, setTotalEpisodes] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -24,6 +25,20 @@ export default function Checklist() {
   useEffect(() => {
     const fetchChecklist = async () => {
       try {
+        // 全エピソード数を取得
+        try {
+          const countResponse = await fetch("/api/episodes/count", {
+            cache: "no-store",
+          });
+          if (countResponse.ok) {
+            const countData = await countResponse.json();
+            setTotalEpisodes(countData.count || 0);
+          }
+        } catch (err) {
+          console.error("エピソード数取得エラー:", err);
+          // エラーが発生しても続行
+        }
+
         // GitHubのraw URLからチェックリストファイルを取得
         const checklistUrl =
           process.env.NEXT_PUBLIC_CHECKLIST_URL ||
@@ -191,7 +206,7 @@ export default function Checklist() {
                 <div className="mb-4">
                   <p className="text-body-medium text-gray-600">
                     チェック済み: {checkedEpisodes.length}件 / 全
-                    {allEpisodes.length}件
+                    {totalEpisodes > 0 ? totalEpisodes : allEpisodes.length}件
                   </p>
                 </div>
 
