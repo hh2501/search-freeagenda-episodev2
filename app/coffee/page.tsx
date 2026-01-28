@@ -44,14 +44,12 @@ export default function Coffee() {
                 href="https://buymeacoffee.com/miozuma"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block hover:opacity-80 transition-opacity"
               >
                 <Image
                   src="/bmc-button.png"
                   alt="Buy Me a Coffee"
                   width={217}
                   height={60}
-                  className="h-auto"
                 />
               </a>
             </div>
