@@ -246,6 +246,28 @@ function HomeContent() {
       return;
     }
 
+    // クライアントサイドキャッシュから検索結果を取得
+    const cacheKey = `search:${searchQuery}:${exactMatch ? 'exact' : 'partial'}`;
+    const cachedResults = typeof window !== 'undefined' 
+      ? sessionStorage.getItem(cacheKey)
+      : null;
+
+    if (cachedResults) {
+      // キャッシュから結果を復元
+      try {
+        const parsedResults = JSON.parse(cachedResults);
+        setResults(parsedResults);
+        setHasSearched(true);
+        setSortBy("relevance");
+        setLoading(false);
+        setError(null);
+        return; // キャッシュから復元した場合はAPIを呼び出さない
+      } catch (e) {
+        // キャッシュのパースに失敗した場合は通常の検索を実行
+        console.error("Failed to parse cached results", e);
+      }
+    }
+
     setLoading(true);
     setError(null);
     setHasSearched(true);
@@ -287,7 +309,13 @@ function HomeContent() {
         }
       }
 
-      setResults(data.results || []);
+      const searchResults = data.results || [];
+      setResults(searchResults);
+
+      // クライアントサイドキャッシュに保存
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
+      }
 
       // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
       requestAnimationFrame(() => {
