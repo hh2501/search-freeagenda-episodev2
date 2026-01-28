@@ -33,6 +33,9 @@ export default function EpisodeDetail() {
   const [matchPositions, setMatchPositions] = useState<MatchPosition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTranscript, setEditedTranscript] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchEpisode = async () => {
@@ -52,6 +55,7 @@ export default function EpisodeDetail() {
 
         setEpisode(data.episode);
         setMatchPositions(data.allMatchPositions || []);
+        setEditedTranscript(data.episode.transcriptText || '');
         
         // デバッグログ（開発環境のみ）
         if (process.env.NODE_ENV === 'development') {
@@ -85,6 +89,41 @@ export default function EpisodeDetail() {
       });
     } catch {
       return dateString;
+    }
+  };
+
+  const handleSaveTranscript = async () => {
+    if (!episode) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/episode/${episodeId}/transcript`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transcriptText: editedTranscript,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '保存に失敗しました');
+      }
+
+      // エピソード情報を更新
+      setEpisode({
+        ...episode,
+        transcriptText: editedTranscript,
+      });
+      setIsEditing(false);
+      alert('文字起こしを保存しました');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '保存に失敗しました');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -204,14 +243,29 @@ export default function EpisodeDetail() {
             {formatDate(episode.publishedAt)}
           </div>
 
-          <a
-            href={episode.listenUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="md-filled-button inline-block mb-8"
-          >
-            LISTENで聴く
-          </a>
+          <div className="flex gap-3 mb-8">
+            <a
+              href={episode.listenUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="md-filled-button inline-block"
+            >
+              LISTENで聴く
+            </a>
+            {episode.transcriptText && (
+              <button
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  if (!isEditing) {
+                    setEditedTranscript(episode.transcriptText);
+                  }
+                }}
+                className="md-outlined-button"
+              >
+                {isEditing ? '編集をキャンセル' : '文字起こしを編集'}
+              </button>
+            )}
+          </div>
 
           {episode.description && (
             <div className="mb-8">
@@ -258,6 +312,51 @@ export default function EpisodeDetail() {
               <p className="text-body-medium text-yellow-800">
                 検索キーワード「{searchQuery}」のマッチ箇所が見つかりませんでした。
               </p>
+            </div>
+          )}
+
+          {episode.transcriptText && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-title-large font-semibold text-gray-800">
+                  文字起こし
+                </h2>
+              </div>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <textarea
+                    value={editedTranscript}
+                    onChange={(e) => setEditedTranscript(e.target.value)}
+                    className="w-full min-h-[400px] p-4 border border-gray-300 rounded-md text-body-medium font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-freeagenda-dark focus:border-transparent"
+                    placeholder="文字起こしを編集..."
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleSaveTranscript}
+                      disabled={saving}
+                      className="md-filled-button"
+                    >
+                      {saving ? '保存中...' : '保存'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditedTranscript(episode.transcriptText);
+                      }}
+                      disabled={saving}
+                      className="md-outlined-button"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-body-medium text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {episode.transcriptText}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
