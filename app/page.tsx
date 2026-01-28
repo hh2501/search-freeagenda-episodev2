@@ -373,9 +373,9 @@ function HomeContent() {
         sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
       }
 
-      // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-      scrollToLastClickedEpisode();
-    } catch (err) {
+          // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
+          setTimeout(() => scrollToLastClickedEpisode(), 0);
+        } catch (err) {
       setError(
         err instanceof Error ? err.message : "検索中にエラーが発生しました",
       );
