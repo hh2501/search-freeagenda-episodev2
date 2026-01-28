@@ -151,37 +151,7 @@ function HomeContent() {
           setIsInitialLoad(false);
 
           // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          requestAnimationFrame(() => {
-            if (typeof window !== "undefined") {
-              const lastClickedId = sessionStorage.getItem(
-                "lastClickedEpisodeId",
-              );
-              if (lastClickedId) {
-                const element = document.getElementById(
-                  `episode-${lastClickedId}`,
-                );
-                if (element) {
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                  // スクロール後にハイライト表示（視覚的にわかりやすく）
-                  element.classList.add(
-                    "ring-2",
-                    "ring-freeagenda-dark",
-                    "ring-offset-2",
-                  );
-                  setTimeout(() => {
-                    element.classList.remove(
-                      "ring-2",
-                      "ring-freeagenda-dark",
-                      "ring-offset-2",
-                    );
-                  }, 2000);
-                }
-              }
-            }
-          });
+          setTimeout(() => scrollToLastClickedEpisode(), 0);
           return; // キャッシュから復元した場合はAPIを呼び出さない
         } catch (e) {
           // キャッシュのパースに失敗した場合は通常の検索を実行
