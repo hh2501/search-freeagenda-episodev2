@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -41,27 +41,85 @@ function HomeContent() {
     listenUrl: string;
   } | null>(null);
 
+  // スクロール処理を関数化して再利用
+  const scrollToLastClickedEpisode = useCallback(() => {
+    if (typeof window === "undefined") return;
+    
+    requestAnimationFrame(() => {
+      const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
+      if (lastClickedId) {
+        const element = document.getElementById(`episode-${lastClickedId}`);
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          // スクロール後にハイライト表示
+          element.classList.add(
+            "ring-2",
+            "ring-freeagenda-dark",
+            "ring-offset-2",
+          );
+          setTimeout(() => {
+            element.classList.remove(
+              "ring-2",
+              "ring-freeagenda-dark",
+              "ring-offset-2",
+            );
+          }, 2000);
+        }
+      }
+    });
+  }, []);
+
   useEffect(() => {
     // 初回マウント時にランダムキーワードを設定
     const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
     setPlaceholder(randomKeyword);
 
-    // 最新エピソード情報を取得
+    // 最新エピソード情報を取得（遅延読み込みで優先度を下げる）
     const fetchLatestEpisode = async () => {
-      try {
-        const response = await fetch("/api/latest-episode");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.episodeNumber && data.title && data.listenUrl) {
-            setLatestEpisode({
-              episodeNumber: data.episodeNumber,
-              title: data.title,
-              listenUrl: data.listenUrl,
-            });
+      // ブラウザがアイドル状態になったら実行
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        requestIdleCallback(
+          async () => {
+            try {
+              const response = await fetch("/api/latest-episode");
+              if (response.ok) {
+                const data = await response.json();
+                if (data.episodeNumber && data.title && data.listenUrl) {
+                  setLatestEpisode({
+                    episodeNumber: data.episodeNumber,
+                    title: data.title,
+                    listenUrl: data.listenUrl,
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("最新エピソード取得エラー:", error);
+            }
+          },
+          { timeout: 2000 },
+        );
+      } else {
+        // requestIdleCallbackがサポートされていない場合は、短い遅延後に実行
+        setTimeout(async () => {
+          try {
+            const response = await fetch("/api/latest-episode");
+            if (response.ok) {
+              const data = await response.json();
+              if (data.episodeNumber && data.title && data.listenUrl) {
+                setLatestEpisode({
+                  episodeNumber: data.episodeNumber,
+                  title: data.title,
+                  listenUrl: data.listenUrl,
+                });
+              }
+            }
+          } catch (error) {
+            console.error("最新エピソード取得エラー:", error);
           }
-        }
-      } catch (error) {
-        console.error("最新エピソード取得エラー:", error);
+        }, 100);
       }
     };
     fetchLatestEpisode();
@@ -316,30 +374,7 @@ function HomeContent() {
       }
 
       // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-      requestAnimationFrame(() => {
-        if (typeof window !== "undefined") {
-          const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
-          if (lastClickedId) {
-            const element = document.getElementById(`episode-${lastClickedId}`);
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth", block: "center" });
-              // スクロール後にハイライト表示（視覚的にわかりやすく）
-              element.classList.add(
-                "ring-2",
-                "ring-freeagenda-dark",
-                "ring-offset-2",
-              );
-              setTimeout(() => {
-                element.classList.remove(
-                  "ring-2",
-                  "ring-freeagenda-dark",
-                  "ring-offset-2",
-                );
-              }, 2000);
-            }
-          }
-        }
-      });
+      scrollToLastClickedEpisode();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "検索中にエラーが発生しました",
@@ -422,8 +457,8 @@ function HomeContent() {
     );
   };
 
-  // 検索結果をソート
-  const getSortedResults = (): SearchResult[] => {
+  // 検索結果をソート（メモ化）
+  const sortedResults = useMemo(() => {
     const sorted = [...results];
 
     switch (sortBy) {
@@ -447,7 +482,7 @@ function HomeContent() {
       default:
         return sorted;
     }
-  };
+  }, [results, sortBy]);
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -461,7 +496,7 @@ function HomeContent() {
               height={400}
               className="max-w-[200px] md:max-w-[300px] lg:max-w-[400px] h-auto rounded-xl shadow-md transition-all duration-200 ease-out hover:shadow-xl"
               priority
-              unoptimized
+              loading="eager"
             />
           </div>
           <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">
@@ -694,7 +729,7 @@ function HomeContent() {
 
         {hasSearched && query !== "" && (
           <div className="space-y-4">
-            {getSortedResults().map((result, index) => (
+            {sortedResults.map((result, index) => (
               <div
                 key={result.episodeId}
                 className="md-result-card relative"
