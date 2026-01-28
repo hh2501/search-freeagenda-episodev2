@@ -47,7 +47,7 @@ export default function Coffee() {
                 className="inline-block hover:opacity-80 transition-opacity"
               >
                 <Image
-                  src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+                  src="/bmc-button.png"
                   alt="Buy Me a Coffee"
                   width={217}
                   height={60}
