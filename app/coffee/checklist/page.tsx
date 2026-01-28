@@ -3,23 +3,83 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-interface CheckedEpisode {
+interface Episode {
   episodeId: string;
   episodeNumber: string;
   title: string;
-  checkedAt: string;
-  status: "checked" | "in-progress";
+  publishedAt: string;
+  checked: boolean;
+  checkedAt: string | null;
 }
 
 export default function Checklist() {
-  const [checkedEpisodes, setCheckedEpisodes] = useState<CheckedEpisode[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: 実際のAPIからチェック済みエピソードのリストを取得
-    // 現在は空の配列を返す（今後実装予定）
-    setLoading(false);
+    const fetchEpisodes = async () => {
+      try {
+        const response = await fetch("/api/transcript-checklist/all");
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "エピソードの取得に失敗しました");
+        }
+
+        setEpisodes(data.episodes || []);
+      } catch (error) {
+        console.error("エピソード取得エラー:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEpisodes();
   }, []);
+
+  const handleToggleCheck = async (episodeId: string, currentChecked: boolean) => {
+    setUpdating(episodeId);
+    try {
+      const response = await fetch("/api/transcript-checklist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          episodeId,
+          checked: !currentChecked,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "チェック状態の更新に失敗しました");
+      }
+
+      // ローカル状態を更新
+      setEpisodes((prev) =>
+        prev.map((ep) =>
+          ep.episodeId === episodeId
+            ? {
+                ...ep,
+                checked: !currentChecked,
+                checkedAt: !currentChecked ? new Date().toISOString() : null,
+              }
+            : ep
+        )
+      );
+    } catch (error) {
+      console.error("チェック状態更新エラー:", error);
+      alert("チェック状態の更新に失敗しました。");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  // チェック済みエピソードのみをフィルタリング
+  const checkedEpisodes = episodes.filter((ep) => ep.checked);
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -81,54 +141,137 @@ export default function Checklist() {
                   <p className="text-gray-600">読み込み中...</p>
                 </div>
               </div>
-            ) : checkedEpisodes.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-body-medium text-gray-600 mb-4">
-                  まだチェック済みのエピソードはありません。
-                </p>
-                <p className="text-body-small text-gray-500">
-                  チェック作業は継続的に進めています。
-                </p>
-              </div>
             ) : (
-              <div className="space-y-4">
-                {checkedEpisodes.map((episode) => (
-                  <div
-                    key={episode.episodeId}
-                    className="border-l-4 border-freeagenda-light pl-4 py-3 bg-gray-50 rounded-r-md"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-title-medium font-semibold text-gray-800">
-                        #{episode.episodeNumber} {episode.title}
+              <>
+                <div className="mb-6">
+                  <p className="text-body-medium text-gray-600 mb-4">
+                    チェック済み: {checkedEpisodes.length}件 / 全{episodes.length}件
+                  </p>
+                </div>
+
+                {checkedEpisodes.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-body-medium text-gray-600 mb-4">
+                      まだチェック済みのエピソードはありません。
+                    </p>
+                    <p className="text-body-small text-gray-500">
+                      下のリストからエピソードを選択してチェックを入れてください。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 mb-8">
+                    <h2 className="text-title-large font-semibold text-gray-800 mb-4">
+                      チェック済みエピソード
+                    </h2>
+                    {checkedEpisodes.map((episode) => (
+                      <div
+                        key={episode.episodeId}
+                        className="border-l-4 border-green-500 pl-4 py-3 bg-green-50 rounded-r-md"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-title-medium font-semibold text-gray-800">
+                            #{episode.episodeNumber} {episode.title}
+                          </div>
+                          <div className="text-label-small text-gray-500">
+                            {episode.checkedAt
+                              ? new Date(episode.checkedAt).toLocaleDateString(
+                                  "ja-JP",
+                                )
+                              : ""}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-label-small px-2 py-1 rounded-md bg-green-100 text-green-800">
+                            チェック済み
+                          </span>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={episode.checked}
+                              onChange={() =>
+                                handleToggleCheck(
+                                  episode.episodeId,
+                                  episode.checked,
+                                )
+                              }
+                              disabled={updating === episode.episodeId}
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            />
+                            <span className="text-label-small text-gray-600">
+                              チェックを外す
+                            </span>
+                          </label>
+                          <Link
+                            href={`/episode/${episode.episodeId}`}
+                            className="text-label-small text-freeagenda-dark hover:underline"
+                          >
+                            エピソードを見る
+                          </Link>
+                        </div>
                       </div>
-                      <div className="text-label-small text-gray-500">
-                        {new Date(episode.checkedAt).toLocaleDateString(
-                          "ja-JP",
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-label-small px-2 py-1 rounded-md ${
-                          episode.status === "checked"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <h2 className="text-title-large font-semibold text-gray-800 mb-4">
+                    全エピソード一覧
+                  </h2>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {episodes.map((episode) => (
+                      <div
+                        key={episode.episodeId}
+                        className={`flex items-center justify-between p-3 rounded-md border ${
+                          episode.checked
+                            ? "bg-green-50 border-green-200"
+                            : "bg-white border-gray-200 hover:bg-gray-50"
                         }`}
                       >
-                        {episode.status === "checked"
-                          ? "チェック済み"
-                          : "チェック中"}
-                      </span>
-                      <Link
-                        href={`/episode/${episode.episodeId}`}
-                        className="text-label-small text-freeagenda-dark hover:underline"
-                      >
-                        エピソードを見る
-                      </Link>
-                    </div>
+                        <div className="flex-1">
+                          <div className="text-body-medium font-medium text-gray-800">
+                            #{episode.episodeNumber} {episode.title}
+                          </div>
+                          <div className="text-label-small text-gray-500 mt-1">
+                            {episode.publishedAt
+                              ? new Date(
+                                  episode.publishedAt,
+                                ).toLocaleDateString("ja-JP")
+                              : ""}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {episode.checked && (
+                            <span className="text-label-small px-2 py-1 rounded-md bg-green-100 text-green-800">
+                              チェック済み
+                            </span>
+                          )}
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={episode.checked}
+                              onChange={() =>
+                                handleToggleCheck(
+                                  episode.episodeId,
+                                  episode.checked,
+                                )
+                              }
+                              disabled={updating === episode.episodeId}
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            />
+                            <span className="text-label-small text-gray-700">
+                              {updating === episode.episodeId
+                                ? "更新中..."
+                                : episode.checked
+                                  ? "チェック済み"
+                                  : "チェックする"}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>

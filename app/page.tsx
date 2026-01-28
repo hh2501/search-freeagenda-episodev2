@@ -78,10 +78,9 @@ function HomeContent() {
       setIsInitialLoad(true);
 
       // クライアントサイドキャッシュから検索結果を取得
-      const cacheKey = `search:${urlQuery}:${urlExactMatch ? 'exact' : 'partial'}`;
-      const cachedResults = typeof window !== 'undefined' 
-        ? sessionStorage.getItem(cacheKey)
-        : null;
+      const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}`;
+      const cachedResults =
+        typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
 
       if (cachedResults) {
         // キャッシュから結果を復元
@@ -168,7 +167,7 @@ function HomeContent() {
           setResults(searchResults);
 
           // クライアントサイドキャッシュに保存
-          if (typeof window !== 'undefined') {
+          if (typeof window !== "undefined") {
             sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
           }
 
@@ -247,10 +246,9 @@ function HomeContent() {
     }
 
     // クライアントサイドキャッシュから検索結果を取得
-    const cacheKey = `search:${searchQuery}:${exactMatch ? 'exact' : 'partial'}`;
-    const cachedResults = typeof window !== 'undefined' 
-      ? sessionStorage.getItem(cacheKey)
-      : null;
+    const cacheKey = `search:${searchQuery}:${exactMatch ? "exact" : "partial"}`;
+    const cachedResults =
+      typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
 
     if (cachedResults) {
       // キャッシュから結果を復元
@@ -313,7 +311,7 @@ function HomeContent() {
       setResults(searchResults);
 
       // クライアントサイドキャッシュに保存
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
       }
 
@@ -717,10 +715,10 @@ function HomeContent() {
                   }
                   const params = new URLSearchParams();
                   if (query) {
-                    params.set('q', query);
+                    params.set("q", query);
                   }
                   if (exactMatchMode) {
-                    params.set('exact', '1');
+                    params.set("exact", "1");
                   }
                   const queryString = params.toString();
                   router.push(
@@ -743,10 +741,10 @@ function HomeContent() {
                     }
                     const params = new URLSearchParams();
                     if (query) {
-                      params.set('q', query);
+                      params.set("q", query);
                     }
                     if (exactMatchMode) {
-                      params.set('exact', '1');
+                      params.set("exact", "1");
                     }
                     const queryString = params.toString();
                     router.push(
@@ -765,10 +763,10 @@ function HomeContent() {
                     href={(() => {
                       const params = new URLSearchParams();
                       if (query) {
-                        params.set('q', query);
+                        params.set("q", query);
                       }
                       if (exactMatchMode) {
-                        params.set('exact', '1');
+                        params.set("exact", "1");
                       }
                       const queryString = params.toString();
                       return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
@@ -813,10 +811,10 @@ function HomeContent() {
                     href={(() => {
                       const params = new URLSearchParams();
                       if (query) {
-                        params.set('q', query);
+                        params.set("q", query);
                       }
                       if (exactMatchMode) {
-                        params.set('exact', '1');
+                        params.set("exact", "1");
                       }
                       const queryString = params.toString();
                       return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
