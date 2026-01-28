@@ -18,6 +18,24 @@ export async function PUT(
     return NextResponse.json({ error: 'エピソードIDが必要です' }, { status: 400 });
   }
 
+  // パスワード認証
+  const authHeader = request.headers.get('authorization');
+  const correctPassword = process.env.TRANSCRIPT_EDIT_PASSWORD;
+
+  if (!correctPassword) {
+    return NextResponse.json(
+      { error: '認証設定が完了していません' },
+      { status: 500 }
+    );
+  }
+
+  if (!authHeader || authHeader !== `Bearer ${correctPassword}`) {
+    return NextResponse.json(
+      { error: '認証が必要です' },
+      { status: 401 }
+    );
+  }
+
   // OpenSearchクライアントの確認
   if (!client) {
     return NextResponse.json(

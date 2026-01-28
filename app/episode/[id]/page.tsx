@@ -36,6 +36,10 @@ export default function EpisodeDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTranscript, setEditedTranscript] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const fetchEpisode = async () => {
@@ -92,15 +96,68 @@ export default function EpisodeDetail() {
     }
   };
 
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+
+    try {
+      const response = await fetch('/api/auth/verify-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '認証に失敗しました');
+      }
+
+      if (data.authenticated) {
+        setIsAuthenticated(true);
+        setShowPasswordDialog(false);
+        setPassword('');
+        setIsEditing(true);
+        setEditedTranscript(episode?.transcriptText || '');
+      } else {
+        setPasswordError('パスワードが正しくありません');
+      }
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : '認証に失敗しました');
+    }
+  };
+
+  const handleEditClick = () => {
+    if (isAuthenticated) {
+      setIsEditing(true);
+      setEditedTranscript(episode?.transcriptText || '');
+    } else {
+      setShowPasswordDialog(true);
+    }
+  };
+
   const handleSaveTranscript = async () => {
-    if (!episode) return;
+    if (!episode || !isAuthenticated) return;
 
     setSaving(true);
     try {
+      // パスワードを取得（セッションストレージから）
+      const storedPassword = sessionStorage.getItem('transcript_edit_password');
+      if (!storedPassword) {
+        alert('認証が必要です');
+        setIsAuthenticated(false);
+        setIsEditing(false);
+        setShowPasswordDialog(true);
+        return;
+      }
+
       const response = await fetch(`/api/episode/${episodeId}/transcript`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedPassword}`,
         },
         body: JSON.stringify({
           transcriptText: editedTranscript,
@@ -254,15 +311,10 @@ export default function EpisodeDetail() {
             </a>
             {episode.transcriptText && (
               <button
-                onClick={() => {
-                  setIsEditing(!isEditing);
-                  if (!isEditing) {
-                    setEditedTranscript(episode.transcriptText);
-                  }
-                }}
+                onClick={handleEditClick}
                 className="md-outlined-button"
               >
-                {isEditing ? '編集をキャンセル' : '文字起こしを編集'}
+                文字起こしを編集
               </button>
             )}
           </div>
@@ -315,6 +367,59 @@ export default function EpisodeDetail() {
             </div>
           )}
 
+          {/* パスワード認証ダイアログ */}
+          {showPasswordDialog && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h3 className="text-title-large font-semibold text-gray-900 mb-4">
+                  パスワード認証
+                </h3>
+                <form onSubmit={handlePasswordSubmit}>
+                  <div className="mb-4">
+                    <label
+                      htmlFor="password"
+                      className="block text-body-medium text-gray-700 mb-2"
+                    >
+                      パスワード
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setPasswordError(null);
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-freeagenda-dark focus:border-transparent"
+                      autoFocus
+                    />
+                    {passwordError && (
+                      <p className="mt-2 text-body-small text-red-600">
+                        {passwordError}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPasswordDialog(false);
+                        setPassword('');
+                        setPasswordError(null);
+                      }}
+                      className="md-outlined-button"
+                    >
+                      キャンセル
+                    </button>
+                    <button type="submit" className="md-filled-button">
+                      認証
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {episode.transcriptText && (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
@@ -347,6 +452,20 @@ export default function EpisodeDetail() {
                       className="md-outlined-button"
                     >
                       キャンセル
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAuthenticated(false);
+                        setIsEditing(false);
+                        setShowPasswordDialog(false);
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.removeItem('transcript_edit_password');
+                        }
+                      }}
+                      disabled={saving}
+                      className="md-text-button text-gray-600"
+                    >
+                      ログアウト
                     </button>
                   </div>
                 </div>
