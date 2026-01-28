@@ -158,6 +158,7 @@ function HomeContent() {
     } else if (!urlQuery && query) {
       // URLパラメータがなくなった場合は検索状態をリセット
       setQuery("");
+      setExactMatchMode(false);
       setHasSearched(false);
       setResults([]);
       setIsInitialLoad(false);
@@ -625,8 +626,16 @@ function HomeContent() {
                       result.episodeId,
                     );
                   }
+                  const params = new URLSearchParams();
+                  if (query) {
+                    params.set('q', query);
+                  }
+                  if (exactMatchMode) {
+                    params.set('exact', '1');
+                  }
+                  const queryString = params.toString();
                   router.push(
-                    `/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ""}`,
+                    `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`,
                   );
                 }}
                 onKeyDown={(e) => {
@@ -643,8 +652,16 @@ function HomeContent() {
                         result.episodeId,
                       );
                     }
+                    const params = new URLSearchParams();
+                    if (query) {
+                      params.set('q', query);
+                    }
+                    if (exactMatchMode) {
+                      params.set('exact', '1');
+                    }
+                    const queryString = params.toString();
                     router.push(
-                      `/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ""}`,
+                      `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`,
                     );
                   }
                 }}
@@ -656,7 +673,17 @@ function HomeContent() {
               >
                 <h2 className="text-title-large font-bold mb-3">
                   <Link
-                    href={`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ""}`}
+                    href={(() => {
+                      const params = new URLSearchParams();
+                      if (query) {
+                        params.set('q', query);
+                      }
+                      if (exactMatchMode) {
+                        params.set('exact', '1');
+                      }
+                      const queryString = params.toString();
+                      return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
+                    })()}
                     className="text-freeagenda-dark hover:text-freeagenda-dark/80 transition-colors focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 rounded-sm pointer-events-auto"
                     dangerouslySetInnerHTML={{ __html: result.title }}
                   />
@@ -694,7 +721,17 @@ function HomeContent() {
 
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                   <Link
-                    href={`/episode/${result.episodeId}${query ? `?q=${encodeURIComponent(query)}` : ""}`}
+                    href={(() => {
+                      const params = new URLSearchParams();
+                      if (query) {
+                        params.set('q', query);
+                      }
+                      if (exactMatchMode) {
+                        params.set('exact', '1');
+                      }
+                      const queryString = params.toString();
+                      return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
+                    })()}
                     className="flex-1 md-outlined-button flex items-center justify-center text-center min-h-[50px]"
                     onClick={(e) => e.stopPropagation()}
                   >

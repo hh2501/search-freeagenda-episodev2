@@ -27,6 +27,7 @@ export default function EpisodeDetail() {
   const router = useRouter();
   const episodeId = params.id as string;
   const searchQuery = searchParams.get('q');
+  const exactMatchParam = searchParams.get('exact') === '1';
 
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [matchPositions, setMatchPositions] = useState<MatchPosition[]>([]);
@@ -166,7 +167,15 @@ export default function EpisodeDetail() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link
-            href={searchQuery ? `/?q=${encodeURIComponent(searchQuery)}` : '/'}
+            href={(() => {
+              if (!searchQuery) return '/';
+              const params = new URLSearchParams();
+              params.set('q', searchQuery);
+              if (exactMatchParam) {
+                params.set('exact', '1');
+              }
+              return `/?${params.toString()}`;
+            })()}
             className="md-text-button inline-flex items-center gap-1"
           >
             <svg
