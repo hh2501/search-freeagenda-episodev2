@@ -31,7 +31,7 @@ export default function Coffee() {
             コーヒーを奢る
           </h1>
 
-          <div className="prose prose-lg max-w-none mb-8">
+          <div className="prose prose-lg max-w-none">
             <div className="text-body-medium text-gray-700 leading-relaxed mb-6 space-y-3">
               <p>
                 このサイトでは、自動文字起こしで出てしまう誤字や表記ゆれを、検索しやすくするために手作業で直しています。
@@ -57,7 +57,7 @@ export default function Coffee() {
               </a>
             </div>
 
-            <div className="mt-8 mb-8 pt-8 border-t border-gray-200">
+            <div className="mt-8 pt-8 border-t border-gray-200">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
                 文字起こしチェックの状況
               </h2>
