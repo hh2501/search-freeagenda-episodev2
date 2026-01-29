@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get("q");
   const exactMatchParam = searchParams.get("exact") === "1";
   const page = parseInt(searchParams.get("page") || "1", 10);
-  const pageSize = parseInt(searchParams.get("pageSize") || "50", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "25", 10);
   const from = (page - 1) * pageSize;
 
   if (!query || query.trim() === "") {
@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
   }
 
   const searchQuery = query.trim();
-  const cacheKey = exactMatchParam ? `${searchQuery}:exact` : searchQuery;
+  // キャッシュキーにページ番号を含める（ページング対応）
+  const cacheKey = exactMatchParam
+    ? `${searchQuery}:exact:page${page}`
+    : `${searchQuery}:page${page}`;
 
   // キャッシュから結果を取得
   const cacheCheckStart = performance.now();

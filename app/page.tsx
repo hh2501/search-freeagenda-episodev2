@@ -151,11 +151,17 @@ function HomeContent() {
     const urlQuery = searchParams.get("q");
     const urlExactMatch = searchParams.get("exact") === "1";
     const urlPage = parseInt(searchParams.get("page") || "1", 10);
-    setCurrentPage(urlPage);
+    
+    // クエリまたはページ番号が変わった場合に検索を実行
+    const queryChanged = urlQuery && urlQuery !== query;
+    const pageChanged = urlPage !== currentPage;
+    const exactMatchChanged = urlExactMatch !== exactMatchMode;
 
-    if (urlQuery && urlQuery !== query) {
-      setQuery(urlQuery);
-      setExactMatchMode(urlExactMatch);
+    if (urlQuery && (queryChanged || pageChanged || exactMatchChanged)) {
+      // 状態を更新（ページ番号の更新は検索実行前に）
+      if (queryChanged) setQuery(urlQuery);
+      if (exactMatchChanged) setExactMatchMode(urlExactMatch);
+      if (pageChanged) setCurrentPage(urlPage);
       setIsInitialLoad(true);
 
       // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
@@ -163,7 +169,8 @@ function HomeContent() {
       const cachedResults =
         typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
 
-      if (cachedResults && urlPage === 1) {
+      // ページ1のみキャッシュから復元（他のページは常にAPIから取得）
+      if (cachedResults && urlPage === 1 && !pageChanged) {
         // キャッシュから結果を復元（ページ1のみ）
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
@@ -191,13 +198,13 @@ function HomeContent() {
           return;
         }
 
-        // URLパラメータから検索クエリを読み取る場合は、戻るボタンで戻った可能性が高い
-        // キャッシュが効いている可能性が高いので、ローディング状態を表示しない
-        // 初回検索時（queryが空 かつ resultsが空 かつ hasSearchedがfalse）の場合のみローディング状態を表示
+        // ページ変更時は常にローディング状態を表示
+        // 初回検索時またはページ変更時はローディング状態を表示
         const isFirstSearch =
           query === "" && results.length === 0 && !hasSearched;
+        const isPageChange = pageChanged && !isFirstSearch;
 
-        if (isFirstSearch) {
+        if (isFirstSearch || isPageChange) {
           setLoading(true);
         }
         setError(null);
@@ -211,7 +218,7 @@ function HomeContent() {
             params.set("exact", "1");
           }
           params.set("page", urlPage.toString());
-          params.set("pageSize", "50");
+          params.set("pageSize", "25");
           const response = await fetch(`/api/search?${params.toString()}`);
           const data: SearchResponse = await response.json();
 
@@ -282,6 +289,7 @@ function HomeContent() {
       setHasSearched(false);
       setResults([]);
       setIsInitialLoad(false);
+      setCurrentPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -342,7 +350,7 @@ function HomeContent() {
         params.set("exact", "1");
       }
       params.set("page", page.toString());
-      params.set("pageSize", "50");
+      params.set("pageSize", "25");
       const response = await fetch(`/api/search?${params.toString()}`);
       const data: SearchResponse = await response.json();
 
@@ -753,7 +761,7 @@ function HomeContent() {
             <div className="flex items-center justify-between mb-4">
               <div className="text-label-large text-gray-600 font-medium">
                 {totalResults > 0
-                  ? `全${totalResults}件中 ${(currentPage - 1) * 50 + 1}-${Math.min(currentPage * 50, totalResults)}件を表示`
+                  ? `全${totalResults}件中 ${(currentPage - 1) * 25 + 1}-${Math.min(currentPage * 25, totalResults)}件を表示`
                   : `${results.length}件の検索結果`}
               </div>
               <div className="flex items-center gap-3">
