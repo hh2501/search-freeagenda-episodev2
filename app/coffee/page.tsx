@@ -32,7 +32,7 @@ export default function Coffee() {
           </h1>
 
           <div className="prose prose-lg max-w-none mb-8">
-            <div className="text-body-large text-gray-700 leading-relaxed mb-6 space-y-3">
+            <div className="text-body-medium text-gray-700 leading-relaxed mb-6 space-y-3">
               <p>
                 このサイトでは、自動文字起こしで出てしまう誤字や表記ゆれを、検索しやすくするために手作業で直しています。
               </p>
