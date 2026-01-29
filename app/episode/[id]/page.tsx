@@ -144,13 +144,11 @@ export default function EpisodeDetail() {
     setSaving(true);
     try {
       // パスワードを取得（セッションストレージから）
+      // 編集ボタンをクリックしたときに既に認証済みなので、パスワードは存在するはず
       const storedPassword = sessionStorage.getItem('transcript_edit_password');
       if (!storedPassword) {
-        alert('認証が必要です');
-        setIsAuthenticated(false);
-        setIsEditing(false);
-        setShowPasswordDialog(true);
-        return;
+        // 万が一パスワードが存在しない場合（通常は発生しない）
+        throw new Error('認証情報が見つかりません。再度認証してください。');
       }
 
       const response = await fetch(`/api/episode/${episodeId}/transcript`, {
@@ -170,7 +168,7 @@ export default function EpisodeDetail() {
         throw new Error(data.error || '保存に失敗しました');
       }
 
-      // エピソード情報を更新
+      // エピソード情報を更新（保存した文字起こしで更新）
       setEpisode({
         ...episode,
         transcriptText: editedTranscript,
@@ -178,7 +176,14 @@ export default function EpisodeDetail() {
       setIsEditing(false);
       alert('文字起こしを保存しました');
     } catch (err) {
-      alert(err instanceof Error ? err.message : '保存に失敗しました');
+      const errorMessage = err instanceof Error ? err.message : '保存に失敗しました';
+      alert(errorMessage);
+      // 認証エラーの場合は認証状態をリセット
+      if (errorMessage.includes('認証') || errorMessage.includes('認証情報')) {
+        setIsAuthenticated(false);
+        setIsEditing(false);
+        setShowPasswordDialog(true);
+      }
     } finally {
       setSaving(false);
     }
