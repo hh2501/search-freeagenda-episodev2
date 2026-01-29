@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  Suspense,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -26,6 +34,7 @@ interface SearchResponse {
   page?: number;
   pageSize?: number;
   totalPages?: number;
+  error?: string;
 }
 
 function HomeContent() {
@@ -56,7 +65,7 @@ function HomeContent() {
   // スクロール処理を関数化して再利用
   const scrollToLastClickedEpisode = useCallback(() => {
     if (typeof window === "undefined") return;
-    
+
     requestAnimationFrame(() => {
       const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
       if (lastClickedId) {
@@ -149,16 +158,19 @@ function HomeContent() {
       setExactMatchMode(urlExactMatch);
       setIsInitialLoad(true);
 
-      // クライアントサイドキャッシュから検索結果を取得
-      const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}`;
+      // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
+      const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}:${urlPage}`;
       const cachedResults =
         typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
 
-      if (cachedResults) {
-        // キャッシュから結果を復元
+      if (cachedResults && urlPage === 1) {
+        // キャッシュから結果を復元（ページ1のみ）
         try {
-          const parsedResults = JSON.parse(cachedResults);
-          setResults(parsedResults);
+          const parsedData: SearchResponse = JSON.parse(cachedResults);
+          setResults(parsedData.results || []);
+          setTotalResults(parsedData.total || parsedData.results?.length || 0);
+          setTotalPages(parsedData.totalPages || 1);
+          setCurrentPage(parsedData.page || urlPage);
           setHasSearched(true);
           setSortBy("relevance");
           setLoading(false);
@@ -198,6 +210,8 @@ function HomeContent() {
           if (urlExactMatch) {
             params.set("exact", "1");
           }
+          params.set("page", urlPage.toString());
+          params.set("pageSize", "50");
           const response = await fetch(`/api/search?${params.toString()}`);
           const data: SearchResponse = await response.json();
 
@@ -209,11 +223,12 @@ function HomeContent() {
           setResults(searchResults);
           setTotalResults(data.total || searchResults.length);
           setTotalPages(data.totalPages || 1);
-          setCurrentPage(data.page || 1);
+          setCurrentPage(data.page || urlPage);
 
-          // クライアントサイドキャッシュに保存
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
+          // クライアントサイドキャッシュに保存（ページ1のみ）
+          if (typeof window !== "undefined" && urlPage === 1) {
+            const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}:1`;
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
           }
 
           // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
@@ -364,14 +379,14 @@ function HomeContent() {
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.page || 1);
 
-      // クライアントサイドキャッシュに保存
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(cacheKey, JSON.stringify(searchResults));
+      // クライアントサイドキャッシュに保存（ページ1のみ）
+      if (typeof window !== "undefined" && page === 1) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
       }
 
-          // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          setTimeout(() => scrollToLastClickedEpisode(), 0);
-        } catch (err) {
+      // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
+      setTimeout(() => scrollToLastClickedEpisode(), 0);
+    } catch (err) {
       setError(
         err instanceof Error ? err.message : "検索中にエラーが発生しました",
       );
@@ -430,7 +445,7 @@ function HomeContent() {
 
   const handlePageChange = async (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
-    
+
     setCurrentPage(newPage);
     const params = new URLSearchParams();
     if (query.trim()) {
@@ -443,12 +458,12 @@ function HomeContent() {
     const queryString = params.toString();
     router.push(`/?${queryString}`, { scroll: false });
     await performSearch(query, exactMatchMode, newPage);
-    
+
     // ページトップにスクロール
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString("ja-JP", {
@@ -459,7 +474,23 @@ function HomeContent() {
     } catch {
       return dateString;
     }
-  };
+  }, []);
+
+  // URLパラメータ構築をメモ化
+  const buildEpisodeUrl = useCallback(
+    (episodeId: string) => {
+      const params = new URLSearchParams();
+      if (query) {
+        params.set("q", query);
+      }
+      if (exactMatchMode) {
+        params.set("exact", "1");
+      }
+      const queryString = params.toString();
+      return `/episode/${episodeId}${queryString ? `?${queryString}` : ""}`;
+    },
+    [query, exactMatchMode],
+  );
 
   const highlightText = (text: string, query: string) => {
     if (!query) return text;
@@ -516,6 +547,7 @@ function HomeContent() {
               className="max-w-[200px] md:max-w-[300px] lg:max-w-[400px] h-auto rounded-xl shadow-md transition-all duration-200 ease-out hover:shadow-xl"
               priority
               loading="eager"
+              sizes="(max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
             />
           </div>
           <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">
@@ -720,29 +752,32 @@ function HomeContent() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="text-label-large text-gray-600 font-medium">
-                {totalResults > 0 ? `全${totalResults}件中 ${((currentPage - 1) * 50) + 1}-${Math.min(currentPage * 50, totalResults)}件を表示` : `${results.length}件の検索結果`}
+                {totalResults > 0
+                  ? `全${totalResults}件中 ${(currentPage - 1) * 50 + 1}-${Math.min(currentPage * 50, totalResults)}件を表示`
+                  : `${results.length}件の検索結果`}
               </div>
-            <div className="flex items-center gap-3">
-              <label
-                htmlFor="sort-select"
-                className="text-label-medium text-gray-600"
-              >
-                並び替え:
-              </label>
-              <select
-                id="sort-select"
-                value={sortBy}
-                onChange={(e) =>
-                  setSortBy(
-                    e.target.value as "relevance" | "date-desc" | "date-asc",
-                  )
-                }
-                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark transition-all"
-              >
-                <option value="relevance">関連度順</option>
-                <option value="date-desc">日付順（新着）</option>
-                <option value="date-asc">日付順（古い）</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="sort-select"
+                  className="text-label-medium text-gray-600"
+                >
+                  並び替え:
+                </label>
+                <select
+                  id="sort-select"
+                  value={sortBy}
+                  onChange={(e) =>
+                    setSortBy(
+                      e.target.value as "relevance" | "date-desc" | "date-asc",
+                    )
+                  }
+                  className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark transition-all"
+                >
+                  <option value="relevance">関連度順</option>
+                  <option value="date-desc">日付順（新着）</option>
+                  <option value="date-asc">日付順（古い）</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -768,17 +803,7 @@ function HomeContent() {
                       result.episodeId,
                     );
                   }
-                  const params = new URLSearchParams();
-                  if (query) {
-                    params.set("q", query);
-                  }
-                  if (exactMatchMode) {
-                    params.set("exact", "1");
-                  }
-                  const queryString = params.toString();
-                  router.push(
-                    `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`,
-                  );
+                  router.push(buildEpisodeUrl(result.episodeId));
                 }}
                 onKeyDown={(e) => {
                   // リンクやボタンにフォーカスがある場合は、カード全体のキーボード操作を無視
@@ -794,17 +819,7 @@ function HomeContent() {
                         result.episodeId,
                       );
                     }
-                    const params = new URLSearchParams();
-                    if (query) {
-                      params.set("q", query);
-                    }
-                    if (exactMatchMode) {
-                      params.set("exact", "1");
-                    }
-                    const queryString = params.toString();
-                    router.push(
-                      `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`,
-                    );
+                    router.push(buildEpisodeUrl(result.episodeId));
                   }
                 }}
                 tabIndex={-1}
@@ -815,17 +830,7 @@ function HomeContent() {
               >
                 <h2 className="text-title-large font-bold mb-3">
                   <Link
-                    href={(() => {
-                      const params = new URLSearchParams();
-                      if (query) {
-                        params.set("q", query);
-                      }
-                      if (exactMatchMode) {
-                        params.set("exact", "1");
-                      }
-                      const queryString = params.toString();
-                      return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
-                    })()}
+                    href={buildEpisodeUrl(result.episodeId)}
                     className="text-freeagenda-dark hover:text-freeagenda-dark/80 transition-colors focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 rounded-sm pointer-events-auto"
                     dangerouslySetInnerHTML={{ __html: result.title }}
                   />
@@ -863,17 +868,7 @@ function HomeContent() {
 
                 <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                   <Link
-                    href={(() => {
-                      const params = new URLSearchParams();
-                      if (query) {
-                        params.set("q", query);
-                      }
-                      if (exactMatchMode) {
-                        params.set("exact", "1");
-                      }
-                      const queryString = params.toString();
-                      return `/episode/${result.episodeId}${queryString ? `?${queryString}` : ""}`;
-                    })()}
+                    href={buildEpisodeUrl(result.episodeId)}
                     className="flex-1 md-outlined-button flex items-center justify-center text-center min-h-[50px]"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -895,52 +890,55 @@ function HomeContent() {
         )}
 
         {/* ページネーション */}
-        {results.length > 0 && hasSearched && query !== "" && totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1 || loading}
-              className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              前へ
-            </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    disabled={loading}
-                    className={`px-3 py-2 text-body-medium border rounded-md transition-colors ${
-                      currentPage === pageNum
-                        ? "bg-freeagenda-dark text-white border-freeagenda-dark"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+        {results.length > 0 &&
+          hasSearched &&
+          query !== "" &&
+          totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || loading}
+                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                前へ
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={loading}
+                      className={`px-3 py-2 text-body-medium border rounded-md transition-colors ${
+                        currentPage === pageNum
+                          ? "bg-freeagenda-dark text-white border-freeagenda-dark"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || loading}
+                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                次へ
+              </button>
             </div>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages || loading}
-              className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              次へ
-            </button>
-          </div>
-        )}
+          )}
 
         {results.length === 0 &&
           !loading &&
