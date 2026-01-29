@@ -6,6 +6,7 @@
 const STORAGE_KEYS = {
   LAST_CLICKED_EPISODE_ID: "lastClickedEpisodeId",
   SCROLL_TO_EPISODE_ON_RETURN: "scrollToEpisodeOnReturn",
+  SEARCH_RESULTS_SCROLL_Y: "searchResultsScrollY",
   SEARCH_CACHE_PREFIX: "search:",
 } as const;
 
@@ -50,6 +51,36 @@ export const sessionStorageUtils = {
   clearScrollToEpisodeOnReturn: (): void => {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(STORAGE_KEYS.SCROLL_TO_EPISODE_ON_RETURN);
+  },
+
+  /**
+   * 検索結果一覧のスクロール位置（クリック前のY）を保存
+   */
+  saveSearchResultsScrollY: (scrollY: number): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(
+      STORAGE_KEYS.SEARCH_RESULTS_SCROLL_Y,
+      String(scrollY),
+    );
+  },
+
+  /**
+   * 保存した検索結果一覧のスクロール位置を取得
+   */
+  getSearchResultsScrollY: (): number | null => {
+    if (typeof window === "undefined") return null;
+    const raw = sessionStorage.getItem(STORAGE_KEYS.SEARCH_RESULTS_SCROLL_Y);
+    if (raw === null) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  },
+
+  /**
+   * 保存した検索結果一覧のスクロール位置をクリア
+   */
+  clearSearchResultsScrollY: (): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem(STORAGE_KEYS.SEARCH_RESULTS_SCROLL_Y);
   },
 
   /**

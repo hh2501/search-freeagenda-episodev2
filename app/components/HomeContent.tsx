@@ -70,6 +70,7 @@ export default function HomeContent() {
     (episodeId: string) => {
       sessionStorageUtils.saveLastClickedEpisodeId(episodeId);
       sessionStorageUtils.setScrollToEpisodeOnReturn();
+      sessionStorageUtils.saveSearchResultsScrollY(window.scrollY);
       router.push(buildEpisodeUrl(episodeId, query, exactMatchMode));
     },
     [query, exactMatchMode, router],
@@ -170,51 +171,9 @@ export default function HomeContent() {
     }
   }, [query, hasSearched]);
 
-  // スクロール処理を関数化（ガード節で早期リターン）
-  const attemptScrollToEpisode = useCallback(
-    (episodeId: string, attempt: number, maxAttempts: number = 5) => {
-      const element = document.getElementById(`episode-${episodeId}`);
-
-      // ガード節: 要素が見つかったらスクロール
-      if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-        element.classList.add(
-          "ring-2",
-          "ring-freeagenda-dark",
-          "ring-offset-2",
-        );
-        setTimeout(() => {
-          element.classList.remove(
-            "ring-2",
-            "ring-freeagenda-dark",
-            "ring-offset-2",
-          );
-        }, 2000);
-        setHasScrolledToEpisode(true);
-        return;
-      }
-
-      // ガード節: 最大試行回数に達したら終了
-      if (attempt >= maxAttempts) {
-        return;
-      }
-
-      // 再試行
-      setTimeout(
-        () => attemptScrollToEpisode(episodeId, attempt + 1, maxAttempts),
-        100,
-      );
-    },
-    [],
-  );
-
-  // 検索結果が表示された後、エピソード詳細ページから戻った場合のみスクロール処理を実行
-  // （完全一致⇔部分検索の切り替えやページ変更だけのときはスクロールしない）
+  // 検索結果が表示された後、エピソード詳細から戻った場合にクリック前のスクロール位置を復元
+  // （完全一致⇔部分検索の切り替えやページ変更だけのときは何もしない）
   useEffect(() => {
-    // ガード節: 条件を満たさない場合は早期リターン
     if (
       results.length === 0 ||
       !hasSearched ||
@@ -224,24 +183,21 @@ export default function HomeContent() {
       return;
     }
 
-    const lastClickedId = sessionStorageUtils.getLastClickedEpisodeId();
-    if (!lastClickedId) {
-      return;
-    }
-
     if (!sessionStorageUtils.getScrollToEpisodeOnReturn()) {
       return;
     }
 
+    const savedScrollY = sessionStorageUtils.getSearchResultsScrollY();
     sessionStorageUtils.clearScrollToEpisodeOnReturn();
-    setTimeout(() => attemptScrollToEpisode(lastClickedId, 1), 200);
-  }, [
-    results,
-    hasSearched,
-    loading,
-    hasScrolledToEpisode,
-    attemptScrollToEpisode,
-  ]);
+    sessionStorageUtils.clearSearchResultsScrollY();
+    setHasScrolledToEpisode(true);
+
+    if (savedScrollY !== null && savedScrollY >= 0) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: savedScrollY, behavior: "auto" });
+      });
+    }
+  }, [results, hasSearched, loading, hasScrolledToEpisode]);
 
   // 検索が実行されたときにスクロールフラグをリセット
   useEffect(() => {
