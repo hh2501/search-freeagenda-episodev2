@@ -48,10 +48,9 @@ export default function Checklist() {
           // エラーが発生しても続行
         }
 
-        // GitHubのraw URLからチェックリストファイルを取得
+        // 同一オリジンの public/transcript-checklist.json を取得（ローカル・本番とも反映）
         const checklistUrl =
-          process.env.NEXT_PUBLIC_CHECKLIST_URL ||
-          "https://raw.githubusercontent.com/hh2501/search-freeagenda-episodev2/main/public/transcript-checklist.json";
+          process.env.NEXT_PUBLIC_CHECKLIST_URL || "/transcript-checklist.json";
 
         const response = await fetch(checklistUrl, {
           cache: "no-store",
