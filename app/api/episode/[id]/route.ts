@@ -138,19 +138,42 @@ export async function GET(
 
     if (searchQuery && searchQuery.trim()) {
       const queryText = searchQuery.trim();
-      // 完全一致時は match_phrase でフレーズ検索し、該当フラグメントのみハイライトされる
+      // 完全一致時: 検索APIと同様に複数キーワードを分割し、各キーワードを phrase で AND する
+      const exactKeywords = exactMatchParam
+        ? queryText.split(/\s+/).filter((k) => k.length > 0)
+        : [];
+      const hasMultipleExactKeywords = exactKeywords.length > 1;
+
       const textQuery = exactMatchParam
-        ? {
-            bool: {
-              must: [{ term: { episode_id: episodeId } }],
-              should: [
-                { match_phrase: { transcript_text: { query: queryText } } },
-                { match_phrase: { description: { query: queryText } } },
-                { match_phrase: { title: { query: queryText } } },
-              ],
-              minimum_should_match: 1,
-            },
-          }
+        ? hasMultipleExactKeywords
+          ? {
+              bool: {
+                must: [
+                  { term: { episode_id: episodeId } },
+                  ...exactKeywords.map((kw) => ({
+                    bool: {
+                      should: [
+                        { match_phrase: { transcript_text: { query: kw } } },
+                        { match_phrase: { description: { query: kw } } },
+                        { match_phrase: { title: { query: kw } } },
+                      ],
+                      minimum_should_match: 1,
+                    },
+                  })),
+                ],
+              },
+            }
+          : {
+              bool: {
+                must: [{ term: { episode_id: episodeId } }],
+                should: [
+                  { match_phrase: { transcript_text: { query: queryText } } },
+                  { match_phrase: { description: { query: queryText } } },
+                  { match_phrase: { title: { query: queryText } } },
+                ],
+                minimum_should_match: 1,
+              },
+            }
         : {
             bool: {
               must: [

@@ -40,29 +40,44 @@ function getPlainFragment(fragment: string): string {
   return fragment.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1");
 }
 
-/** 完全一致時: フラグメントに検索クエリが含まれるか（大文字小文字無視） */
+/** 完全一致時: フラグメントに検索クエリ（または複数キーワードのいずれか）が含まれるか */
 function fragmentContainsExactQuery(
   fragment: string,
   searchQuery: string,
 ): boolean {
   if (!searchQuery.trim()) return true;
-  const plain = getPlainFragment(fragment);
-  return plain.toLowerCase().includes(searchQuery.trim().toLowerCase());
+  const plain = getPlainFragment(fragment).toLowerCase();
+  const keywords = searchQuery
+    .trim()
+    .split(/\s+/)
+    .filter((k) => k.length > 0);
+  if (keywords.length > 1) {
+    return keywords.some((kw) => plain.includes(kw.toLowerCase()));
+  }
+  return plain.includes(searchQuery.trim().toLowerCase());
 }
 
 /**
- * 完全一致時: 既存のハイライトを外し、検索クエリの出現箇所だけを <mark> で囲む
+ * 完全一致時: 既存のハイライトを外し、検索クエリ（複数キーワードの場合は各キーワード）の出現箇所を <mark> で囲む
  */
 function highlightExactMatchOnly(
   fragment: string,
   searchQuery: string,
 ): string {
   const plain = getPlainFragment(fragment);
-  const escapedPlain = escapeHtml(plain);
-  const escapedQuery = escapeHtml(searchQuery);
-  if (!escapedQuery) return escapedPlain;
-  const regex = new RegExp(escapeRegex(escapedQuery), "gi");
-  return escapedPlain.replace(regex, (m) => `<mark>${m}</mark>`);
+  let escapedPlain = escapeHtml(plain);
+  const keywords = searchQuery
+    .trim()
+    .split(/\s+/)
+    .filter((k) => k.length > 0);
+  if (keywords.length === 0) return escapedPlain;
+  for (const kw of keywords) {
+    const escapedQuery = escapeHtml(kw);
+    if (!escapedQuery) continue;
+    const regex = new RegExp(escapeRegex(escapedQuery), "gi");
+    escapedPlain = escapedPlain.replace(regex, (m) => `<mark>${m}</mark>`);
+  }
+  return escapedPlain;
 }
 
 export default function EpisodeDetail() {
