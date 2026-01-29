@@ -42,10 +42,7 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     const apiKey = process.env.OPENSEARCH_API_KEY.trim();
 
     if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定:");
-      console.log("- エンドポイント:", endpoint);
-      console.log("- 認証: API Key");
-      console.log("- API Keyの長さ:", apiKey.length);
+      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: API Key");
     }
 
     // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
@@ -74,13 +71,7 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     const hasAuth = true;
 
     if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定:");
-      console.log("- エンドポイント:", endpoint);
-      console.log(
-        "- 認証: 基本認証（ユーザー名: " +
-          process.env.OPENSEARCH_USERNAME +
-          "）",
-      );
+      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: 基本認証");
     }
 
     client = new Client({
@@ -92,9 +83,7 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     });
   } else {
     if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定:");
-      console.log("- エンドポイント:", endpoint);
-      console.log("- 認証: 認証なし");
+      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: なし");
     }
 
     client = new Client({
