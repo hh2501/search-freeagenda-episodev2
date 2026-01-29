@@ -14,7 +14,7 @@ export interface TimestampSegment {
  * 対応形式:
  * - 00:01:23.456 (時:分:秒.ミリ秒)
  * - 00:01:23 (時:分:秒)
- * - 01:23.456 (分:秒.ミリ秒)
+ * - 01:23.456 (分:秒.ミリ秒) … listen.style の VTT はこの形式（時なし）
  * - 01:23 (分:秒)
  */
 function parseTimestamp(timestampStr: string): number {
@@ -79,7 +79,7 @@ export function parseVTTWithTimestamps(vttText: string): TimestampSegment[] {
     }
 
     // タイムスタンプ行を検出（複数の形式に対応）
-    // 例: "00:01:23.456 --> 00:01:25.789" または "00:01:23 --> 00:01:25" など
+    // listen.style: "00:00.000 --> 00:06.520" (MM:SS.mmm)、他 "00:01:23.456 --> ..." (HH:MM:SS.mmm) など
     const timestampMatch = line.match(
       /(\d{2}:\d{2}(?::\d{2})?(?:\.\d{3})?)\s*-->\s*(\d{2}:\d{2}(?::\d{2})?(?:\.\d{3})?)/,
     );
@@ -126,38 +126,145 @@ export function parseVTTWithTimestamps(vttText: string): TimestampSegment[] {
   return segments;
 }
 
+export interface FindTimestampOptions {
+  /** 検索ハイライトのフラグメント順序（0始まり）。指定時はフラグメント順とセグメント順の対応で最適なセグメントを選ぶ */
+  fragmentIndex?: number;
+  /** フラグメント総数。fragmentIndex とともに指定する */
+  totalFragments?: number;
+}
+
+/** 連続する空白を1つにし、前後トリム（検索用正規化） */
+function normalizeForSearch(s: string): string {
+  return s.replace(/\s+/g, " ").trim();
+}
+
 /**
- * テキストが文字起こしのどのセグメントに該当するかを特定し、タイムスタンプを返す
- * 同じフラグメントが複数セグメントでマッチする場合は、startTime が最も遅いセグメントを返す
- * （検索ハイライトは通常、該当箇所の後半側を指すため、17:43 ではなく 1:43 が選ばれる問題を防ぐ）
+ * VTTセグメントを連結した文字列上でフラグメントの出現位置を探し、
+ * その位置が含まれるセグメントの startTime/endTime を返す（正確な秒数）。
+ * 見つからなければ null。
+ */
+function findSegmentByPosition(
+  searchText: string,
+  segments: TimestampSegment[],
+  options?: FindTimestampOptions,
+): { startTime: number; endTime: number } | null {
+  const clean = searchText.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1").trim();
+  if (!clean || segments.length === 0) return null;
+
+  // セグメント順に連結し、各セグメントの開始オフセットを記録（区切りは改行）
+  let offset = 0;
+  const ranges: {
+    start: number;
+    end: number;
+    startTime: number;
+    endTime: number;
+  }[] = [];
+  for (const seg of segments) {
+    const text = seg.text.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1");
+    ranges.push({
+      start: offset,
+      end: offset + text.length,
+      startTime: seg.startTime,
+      endTime: seg.endTime,
+    });
+    offset += text.length + 1; // +1 for newline
+  }
+  const concatenated = segments
+    .map((seg) => seg.text.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1"))
+    .join("\n");
+
+  const toTry = [
+    clean,
+    normalizeForSearch(clean),
+    clean.length > 50 ? clean.substring(0, 50) : clean,
+    clean.length > 20 ? clean.substring(0, 20) : clean,
+  ].filter((s) => s.length >= 5);
+
+  const foundPositions: number[] = [];
+  for (const needle of toTry) {
+    let pos = 0;
+    while (pos < concatenated.length) {
+      const i = concatenated.indexOf(needle, pos);
+      if (i === -1) break;
+      foundPositions.push(i);
+      pos = i + 1;
+    }
+    if (foundPositions.length > 0) break;
+  }
+
+  if (foundPositions.length === 0) return null;
+
+  const segmentForPosition = (p: number) => {
+    for (const r of ranges) {
+      if (p >= r.start && p < r.end) return r;
+      if (p >= r.start && p === r.end && r === ranges[ranges.length - 1])
+        return r;
+    }
+    return null;
+  };
+
+  const candidates = foundPositions
+    .map(segmentForPosition)
+    .filter((r): r is NonNullable<typeof r> => r != null);
+  if (candidates.length === 0) return null;
+
+  const uniqueByTime = Array.from(
+    new Map(candidates.map((r) => [`${r.startTime}-${r.endTime}`, r])).values(),
+  );
+  const byStartTime = uniqueByTime.sort((a, b) => a.startTime - b.startTime);
+
+  const { fragmentIndex, totalFragments } = options ?? {};
+  if (
+    totalFragments != null &&
+    totalFragments > 0 &&
+    fragmentIndex != null &&
+    fragmentIndex >= 0
+  ) {
+    const index = Math.min(fragmentIndex, byStartTime.length - 1);
+    return {
+      startTime: byStartTime[index].startTime,
+      endTime: byStartTime[index].endTime,
+    };
+  }
+  return {
+    startTime: byStartTime[0].startTime,
+    endTime: byStartTime[0].endTime,
+  };
+}
+
+/**
+ * テキストが文字起こしのどのセグメントに該当するかを特定し、タイムスタンプを返す。
+ * まず「VTT連結文字列上の出現位置」で正確なセグメントを特定し、
+ * 失敗時のみ従来のテキスト一致＋fragmentIndex で候補を選ぶ。
  */
 export function findTimestampForText(
   searchText: string,
   segments: TimestampSegment[],
+  options?: FindTimestampOptions,
 ): { startTime: number; endTime: number } | null {
-  // ハイライトタグを削除
   const cleanSearchText = searchText
     .replace(/<em[^>]*>(.*?)<\/em>/gi, "$1")
     .trim();
 
-  if (!cleanSearchText) {
+  if (!cleanSearchText || segments.length === 0) {
     return null;
   }
 
-  // フラグメントが長すぎる場合、最初の50文字を抽出して検索
+  // 1) 正確な秒数: VTT連結上の出現位置でセグメントを特定
+  const byPosition = findSegmentByPosition(searchText, segments, options);
+  if (byPosition) return byPosition;
+
   const searchTextShort =
     cleanSearchText.length > 50
       ? cleanSearchText.substring(0, 50)
       : cleanSearchText;
 
-  // セグメントのテキストを事前にクリーンアップしてキャッシュ
   const cleanSegmentTexts = segments.map((seg) => ({
     ...seg,
     cleanText: seg.text.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1"),
   }));
 
-  // マッチしたセグメントをすべて収集し、startTime が最大のものを返す（本来の該当箇所を優先）
-  let bestMatch: { startTime: number; endTime: number } | null = null;
+  const matches: { startTime: number; endTime: number }[] = [];
 
   for (const segment of cleanSegmentTexts) {
     const isFullMatch =
@@ -166,55 +273,59 @@ export function findTimestampForText(
     const isShortMatch =
       segment.cleanText.includes(searchTextShort) ||
       searchTextShort.includes(segment.cleanText);
-
     if (isFullMatch || isShortMatch) {
-      if (!bestMatch || segment.startTime > bestMatch.startTime) {
-        bestMatch = {
-          startTime: segment.startTime,
-          endTime: segment.endTime,
-        };
-      }
+      matches.push({ startTime: segment.startTime, endTime: segment.endTime });
     }
   }
-  if (bestMatch) return bestMatch;
 
-  // 完全一致が見つからない場合、部分一致で検索（キーワードベース）
-  const searchWords = cleanSearchText.split(/\s+/).filter((w) => w.length > 0);
-  if (searchWords.length > 0) {
-    const keyWords = searchWords.slice(0, Math.min(3, searchWords.length));
-
-    for (const segment of cleanSegmentTexts) {
-      const matchedWords = keyWords.filter((word) =>
-        segment.cleanText.includes(word),
-      );
-      if (matchedWords.length / keyWords.length >= 0.5) {
-        if (!bestMatch || segment.startTime > bestMatch.startTime) {
-          bestMatch = {
+  if (matches.length === 0) {
+    const searchWords = cleanSearchText
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
+    if (searchWords.length > 0) {
+      const keyWords = searchWords.slice(0, Math.min(3, searchWords.length));
+      for (const segment of cleanSegmentTexts) {
+        const matchedWords = keyWords.filter((word) =>
+          segment.cleanText.includes(word),
+        );
+        if (matchedWords.length / keyWords.length >= 0.5) {
+          matches.push({
             startTime: segment.startTime,
             endTime: segment.endTime,
-          };
+          });
         }
       }
     }
   }
-  if (bestMatch) return bestMatch;
 
-  // それでも見つからない場合、最初の10文字で検索
-  if (cleanSearchText.length >= 10) {
+  if (matches.length === 0 && cleanSearchText.length >= 10) {
     const firstChars = cleanSearchText.substring(0, 10);
     for (const segment of cleanSegmentTexts) {
       if (segment.cleanText.includes(firstChars)) {
-        if (!bestMatch || segment.startTime > bestMatch.startTime) {
-          bestMatch = {
-            startTime: segment.startTime,
-            endTime: segment.endTime,
-          };
-        }
+        matches.push({
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+        });
       }
     }
   }
 
-  return bestMatch;
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
+
+  const byStartTime = [...matches].sort((a, b) => a.startTime - b.startTime);
+  const { fragmentIndex, totalFragments } = options ?? {};
+  if (
+    totalFragments != null &&
+    totalFragments > 0 &&
+    fragmentIndex != null &&
+    fragmentIndex >= 0
+  ) {
+    const index = Math.min(fragmentIndex, byStartTime.length - 1);
+    return byStartTime[index];
+  }
+
+  return byStartTime[0];
 }
 
 /**
