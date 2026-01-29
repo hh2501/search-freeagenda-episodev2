@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import client, { INDEX_NAME, initializeIndex } from "@/lib/db/index";
+import client, { INDEX_NAME } from "@/lib/db/index";
 import {
   parseVTTWithTimestamps,
   findTimestampForText,
@@ -167,6 +167,7 @@ export async function GET(
           };
 
       // 検索クエリでハイライトを取得
+      // OpenSearch SDK の QueryContainer 型が bool.should 内の match_phrase 推論と合わないため、body を型アサーションで渡す
       const searchResponse = await client.search({
         index: INDEX_NAME,
         body: {
@@ -183,7 +184,6 @@ export async function GET(
               },
             },
           },
-          // パフォーマンス最適化: 必要なフィールドのみ取得
           _source: {
             includes: [
               "episode_id",
@@ -194,9 +194,9 @@ export async function GET(
               "transcript_text",
             ],
           },
-          timeout: "5s", // タイムアウト設定
+          timeout: "5s",
           size: 1,
-        },
+        } as Parameters<typeof client.search>[0]["body"],
       });
 
       const hits =
