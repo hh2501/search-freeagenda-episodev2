@@ -149,10 +149,14 @@ function HomeContent() {
       // 状態を更新（ページ番号の更新は検索実行前に）
       if (queryChanged) setQuery(urlQuery);
       if (exactMatchChanged) setExactMatchMode(urlExactMatch);
-      if (pageChanged) setCurrentPage(urlPage);
+      if (pageChanged) {
+        setCurrentPage(urlPage);
+        // ページ変更時は即座にローディング状態を表示
+        setLoading(true);
+      }
       setIsInitialLoad(true);
 
-      // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
+      // クライアントサイドキャッシュから検索結果を取得（全ページキャッシュ対応）
       const cacheKey = sessionStorageUtils.buildSearchCacheKey(
         urlQuery,
         urlExactMatch,
@@ -160,9 +164,8 @@ function HomeContent() {
       );
       const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
 
-      // ページ1のみキャッシュから復元（他のページは常にAPIから取得）
-      if (cachedResults && urlPage === 1 && !pageChanged) {
-        // キャッシュから結果を復元（ページ1のみ）
+      // キャッシュから復元（全ページ対応）
+      if (cachedResults) {
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
           restoreSearchResultsFromCache(parsedData, urlPage);
@@ -173,8 +176,8 @@ function HomeContent() {
         }
       }
 
-      // 自動検索を実行
-      performSearch(urlQuery, urlExactMatch, urlPage);
+      // 自動検索を実行（ページ変更時はローディング状態をスキップ）
+      performSearch(urlQuery, urlExactMatch, urlPage, pageChanged);
     } else if (!urlQuery && query) {
       // URLパラメータがなくなった場合は検索状態をリセット
       setQuery("");
@@ -338,12 +341,13 @@ function HomeContent() {
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.page || page);
 
-      // クライアントサイドキャッシュに保存（ページ1のみ）
-      if (page === 1) {
+      // クライアントサイドキャッシュに保存（全ページ対応、最大5ページまで）
+      // メモリ使用量を考慮して制限を設ける
+      if (page <= 5) {
         const cacheKey = sessionStorageUtils.buildSearchCacheKey(
           searchQuery,
           exactMatch,
-          1,
+          page,
         );
         sessionStorageUtils.saveSearchCache(cacheKey, data);
       }
@@ -358,13 +362,14 @@ function HomeContent() {
       searchQuery: string,
       exactMatch: boolean = false,
       page: number = 1,
+      skipLoadingState: boolean = false,
     ) => {
       // ガード節: 空のクエリは早期リターン
       if (!searchQuery.trim()) {
         return;
       }
 
-      // キャッシュから検索結果を取得（ページ1のみキャッシュ）
+      // キャッシュから検索結果を取得（全ページキャッシュ対応）
       const cacheKey = sessionStorageUtils.buildSearchCacheKey(
         searchQuery,
         exactMatch,
@@ -373,7 +378,7 @@ function HomeContent() {
       const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
 
       // ガード節: キャッシュがあれば早期リターン
-      if (cachedResults && page === 1) {
+      if (cachedResults) {
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
           restoreSearchResultsFromCache(parsedData, page);
@@ -383,7 +388,10 @@ function HomeContent() {
         }
       }
 
-      setLoading(true);
+      // ローディング状態は呼び出し元で設定済みの場合はスキップ
+      if (!skipLoadingState) {
+        setLoading(true);
+      }
       setError(null);
       setHasSearched(true);
       setSortBy("relevance");
@@ -448,12 +456,20 @@ function HomeContent() {
       // ガード節: 無効なページ番号は早期リターン
       if (newPage < 1 || newPage > totalPages) return;
 
+      // オプティミスティックUI更新: 即座にページ番号とローディング状態を更新
       setCurrentPage(newPage);
+      setLoading(true);
+
+      // スクロールを先に実行して体感速度を向上
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // URLパラメータを更新（非ブロッキング）
       const params = buildSearchUrlParams(query, exactMatchMode, newPage);
       const queryString = params.toString();
       router.push(`/?${queryString}`, { scroll: false });
+
+      // 検索を実行
       await performSearch(query, exactMatchMode, newPage);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [query, exactMatchMode, totalPages, router, performSearch],
   );
