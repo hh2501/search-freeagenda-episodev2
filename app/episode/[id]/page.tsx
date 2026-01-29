@@ -476,7 +476,7 @@ export default function EpisodeDetail() {
               <div className="flex flex-col items-center gap-1">
                 <button
                   onClick={handleEditClick}
-                  className="text-label-small text-gray-500 hover:text-gray-700 underline"
+                  className="text-label-small text-gray-500 hover:text-gray-700 cursor-pointer"
                 >
                   文字起こしを編集
                 </button>
