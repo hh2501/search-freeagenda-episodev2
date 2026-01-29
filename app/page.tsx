@@ -61,13 +61,13 @@ export default function Home() {
           <HomeContent />
         </Suspense>
 
-        {/* 検索のコツ: サーバーコンポーネント（条件付き表示はクライアント側で制御） */}
-        <div id="search-tips-server-container">
+        {/* 検索のコツ: モバイルでは content-visibility で描画遅延 */}
+        <div id="search-tips-server-container" className="content-below-fold">
           <SearchTipsServer />
         </div>
 
-        {/* ページ最下部: フッターリンク */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
+        {/* ページ最下部: モバイルでは content-visibility で描画遅延 */}
+        <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
           <div className="flex gap-4 justify-center items-center flex-wrap">
             <a href="/about" className="md-text-button">
               このサイトについて

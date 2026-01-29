@@ -22,6 +22,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* モバイル: ビューポート外は描画を遅延して初回表示を軽くする */
+@media (max-width: 768px) {
+  .content-below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+  }
+}
+
 /* すべての要素にNoto Sans JPフォントを適用 */
 * {
   font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;

@@ -12,7 +12,8 @@ export default function HomeHeader() {
           className="max-w-[200px] md:max-w-[300px] lg:max-w-[400px] h-auto rounded-xl shadow-md transition-all duration-200 ease-out hover:shadow-xl"
           priority
           loading="eager"
-          sizes="(max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
+          fetchPriority="high"
+          sizes="(max-width: 480px) 180px, (max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
         />
       </div>
       <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">

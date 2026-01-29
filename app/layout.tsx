@@ -39,6 +39,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        {/* モバイルLCP短縮: サムネイルを最優先で取得 */}
+        <link
+          rel="preload"
+          href="/Thumbnail_image.jpg"
+          as="image"
+        />
+      </head>
       <body className={notoSansJP.className}>
         {children}
         <SpeedInsights />
