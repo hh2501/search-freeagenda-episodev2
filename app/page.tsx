@@ -7,12 +7,21 @@ import {
   Suspense,
   useCallback,
   useMemo,
-  memo,
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import searchKeywords from "@/lib/search-keywords.json";
+import SearchResultCard from "./components/SearchResultCard";
+import SearchTips from "./components/SearchTips";
+import Pagination from "./components/Pagination";
+import { sessionStorageUtils } from "./utils/sessionStorage";
+import {
+  sortSearchResults,
+  formatDate,
+  buildEpisodeUrl,
+  buildSearchUrlParams,
+} from "./utils/searchHelpers";
 
 const keywords = searchKeywords as string[];
 
@@ -63,39 +72,14 @@ function HomeContent() {
     listenUrl: string;
   } | null>(null);
 
-  // スクロール処理を関数化して再利用
-  const scrollToLastClickedEpisode = useCallback(() => {
-    if (typeof window === "undefined") return;
-
-    requestAnimationFrame(() => {
-      const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
-      if (lastClickedId) {
-        const element = document.getElementById(`episode-${lastClickedId}`);
-        if (element) {
-          // スクロール前に少し待機してDOMのレンダリングを確実にする
-          setTimeout(() => {
-            element.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-            // スクロール後にハイライト表示
-            element.classList.add(
-              "ring-2",
-              "ring-freeagenda-dark",
-              "ring-offset-2",
-            );
-            setTimeout(() => {
-              element.classList.remove(
-                "ring-2",
-                "ring-freeagenda-dark",
-                "ring-offset-2",
-              );
-            }, 2000);
-          }, 50);
-        }
-      }
-    });
-  }, []);
+  // エピソードクリック時のハンドラー（統一化）
+  const handleEpisodeClick = useCallback(
+    (episodeId: string) => {
+      sessionStorageUtils.saveLastClickedEpisodeId(episodeId);
+      router.push(buildEpisodeUrl(episodeId, query, exactMatchMode));
+    },
+    [query, exactMatchMode, router],
+  );
 
   useEffect(() => {
     // 初回マウント時にランダムキーワードを設定
@@ -169,27 +153,19 @@ function HomeContent() {
       setIsInitialLoad(true);
 
       // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
-      const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}:${urlPage}`;
-      const cachedResults =
-        typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
+      const cacheKey = sessionStorageUtils.buildSearchCacheKey(
+        urlQuery,
+        urlExactMatch,
+        urlPage,
+      );
+      const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
 
       // ページ1のみキャッシュから復元（他のページは常にAPIから取得）
       if (cachedResults && urlPage === 1 && !pageChanged) {
         // キャッシュから結果を復元（ページ1のみ）
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
-          setResults(parsedData.results || []);
-          setTotalResults(parsedData.total || parsedData.results?.length || 0);
-          setTotalPages(parsedData.totalPages || 1);
-          setCurrentPage(parsedData.page || urlPage);
-          setHasSearched(true);
-          setSortBy("relevance");
-          setLoading(false);
-          setIsInitialLoad(false);
-
-          // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          // スクロールフラグをリセットして、useEffectでスクロール処理を実行
-          setHasScrolledToEpisode(false);
+          restoreSearchResultsFromCache(parsedData, urlPage);
           return; // キャッシュから復元した場合はAPIを呼び出さない
         } catch (e) {
           // キャッシュのパースに失敗した場合は通常の検索を実行
@@ -198,66 +174,7 @@ function HomeContent() {
       }
 
       // 自動検索を実行
-      const executeSearch = async () => {
-        if (!urlQuery.trim()) {
-          return;
-        }
-
-        // ページ変更時は常にローディング状態を表示
-        // 初回検索時またはページ変更時はローディング状態を表示
-        const isFirstSearch =
-          query === "" && results.length === 0 && !hasSearched;
-        const isPageChange = pageChanged && !isFirstSearch;
-
-        if (isFirstSearch || isPageChange) {
-          setLoading(true);
-        }
-        setError(null);
-        setHasSearched(true);
-        setSortBy("relevance");
-
-        try {
-          const params = new URLSearchParams();
-          params.set("q", urlQuery);
-          if (urlExactMatch) {
-            params.set("exact", "1");
-          }
-          params.set("page", urlPage.toString());
-          params.set("pageSize", "25");
-          const response = await fetch(`/api/search?${params.toString()}`);
-          const data: SearchResponse = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "検索に失敗しました");
-          }
-
-          const searchResults = data.results || [];
-          setResults(searchResults);
-          setTotalResults(data.total || searchResults.length);
-          setTotalPages(data.totalPages || 1);
-          setCurrentPage(data.page || urlPage);
-
-          // クライアントサイドキャッシュに保存（ページ1のみ）
-          if (typeof window !== "undefined" && urlPage === 1) {
-            const cacheKey = `search:${urlQuery}:${urlExactMatch ? "exact" : "partial"}:1`;
-            sessionStorage.setItem(cacheKey, JSON.stringify(data));
-          }
-
-          // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          // スクロールフラグをリセットして、useEffectでスクロール処理を実行
-          setHasScrolledToEpisode(false);
-        } catch (err) {
-          setError(
-            err instanceof Error ? err.message : "検索中にエラーが発生しました",
-          );
-          setResults([]);
-        } finally {
-          setLoading(false);
-          setIsInitialLoad(false);
-        }
-      };
-
-      executeSearch();
+      performSearch(urlQuery, urlExactMatch, urlPage);
     } else if (!urlQuery && query) {
       // URLパラメータがなくなった場合は検索状態をリセット
       setQuery("");
@@ -281,48 +198,72 @@ function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
+  // スクロール処理を関数化（ガード節で早期リターン）
+  const attemptScrollToEpisode = useCallback(
+    (episodeId: string, attempt: number, maxAttempts: number = 5) => {
+      const element = document.getElementById(`episode-${episodeId}`);
+
+      // ガード節: 要素が見つかったらスクロール
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        element.classList.add(
+          "ring-2",
+          "ring-freeagenda-dark",
+          "ring-offset-2",
+        );
+        setTimeout(() => {
+          element.classList.remove(
+            "ring-2",
+            "ring-freeagenda-dark",
+            "ring-offset-2",
+          );
+        }, 2000);
+        setHasScrolledToEpisode(true);
+        return;
+      }
+
+      // ガード節: 最大試行回数に達したら終了
+      if (attempt >= maxAttempts) {
+        return;
+      }
+
+      // 再試行
+      setTimeout(
+        () => attemptScrollToEpisode(episodeId, attempt + 1, maxAttempts),
+        100,
+      );
+    },
+    [],
+  );
+
   // 検索結果が表示された後、エピソード詳細ページから戻った場合にスクロール処理を実行
   useEffect(() => {
-    // 検索結果が表示されている場合のみ実行
-    if (results.length > 0 && hasSearched && !loading) {
-      const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
-
-      if (lastClickedId && !hasScrolledToEpisode) {
-        // DOMのレンダリングを待つため、複数のタイミングで試行
-        const attemptScroll = (attempt: number, maxAttempts: number = 5) => {
-          const element = document.getElementById(`episode-${lastClickedId}`);
-
-          if (element) {
-            // 要素が見つかったらスクロール
-            element.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-            // スクロール後にハイライト表示
-            element.classList.add(
-              "ring-2",
-              "ring-freeagenda-dark",
-              "ring-offset-2",
-            );
-            setTimeout(() => {
-              element.classList.remove(
-                "ring-2",
-                "ring-freeagenda-dark",
-                "ring-offset-2",
-              );
-            }, 2000);
-            setHasScrolledToEpisode(true);
-          } else if (attempt < maxAttempts) {
-            // 要素が見つからない場合、少し待ってから再試行
-            setTimeout(() => attemptScroll(attempt + 1, maxAttempts), 100);
-          }
-        };
-
-        // 最初の試行を少し遅延させて実行
-        setTimeout(() => attemptScroll(1), 200);
-      }
+    // ガード節: 条件を満たさない場合は早期リターン
+    if (
+      results.length === 0 ||
+      !hasSearched ||
+      loading ||
+      hasScrolledToEpisode
+    ) {
+      return;
     }
-  }, [results, hasSearched, loading, hasScrolledToEpisode]);
+
+    const lastClickedId = sessionStorageUtils.getLastClickedEpisodeId();
+    if (!lastClickedId) {
+      return;
+    }
+
+    setTimeout(() => attemptScrollToEpisode(lastClickedId, 1), 200);
+  }, [
+    results,
+    hasSearched,
+    loading,
+    hasScrolledToEpisode,
+    attemptScrollToEpisode,
+  ]);
 
   // 検索が実行されたときにスクロールフラグをリセット
   useEffect(() => {
@@ -340,51 +281,26 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  const performSearch = async (
-    searchQuery: string,
-    exactMatch: boolean = false,
-    page: number = 1,
-  ) => {
-    if (!searchQuery.trim()) {
-      return;
-    }
+  // キャッシュから検索結果を復元（副作用あり）
+  const restoreSearchResultsFromCache = useCallback(
+    (cachedData: SearchResponse, page: number) => {
+      setResults(cachedData.results || []);
+      setTotalResults(cachedData.total || cachedData.results?.length || 0);
+      setTotalPages(cachedData.totalPages || 1);
+      setCurrentPage(cachedData.page || page);
+      setHasSearched(true);
+      setSortBy("relevance");
+      setLoading(false);
+      setIsInitialLoad(false);
+      setHasScrolledToEpisode(false);
+    },
+    [],
+  );
 
-    // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
-    const cacheKey = `search:${searchQuery}:${exactMatch ? "exact" : "partial"}:${page}`;
-    const cachedResults =
-      typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
-
-    if (cachedResults && page === 1) {
-      // キャッシュから結果を復元（ページ1のみ）
-      try {
-        const parsedData: SearchResponse = JSON.parse(cachedResults);
-        setResults(parsedData.results || []);
-        setTotalResults(parsedData.total || parsedData.results?.length || 0);
-        setTotalPages(parsedData.totalPages || 1);
-        setCurrentPage(parsedData.page || 1);
-        setHasSearched(true);
-        setSortBy("relevance");
-        setLoading(false);
-        setError(null);
-        return; // キャッシュから復元した場合はAPIを呼び出さない
-      } catch (e) {
-        // キャッシュのパースに失敗した場合は通常の検索を実行
-        console.error("Failed to parse cached results", e);
-      }
-    }
-
-    setLoading(true);
-    setError(null);
-    setHasSearched(true);
-    setSortBy("relevance"); // 新しい検索時は関連度順にリセット
-
-    try {
-      const params = new URLSearchParams();
-      params.set("q", searchQuery);
-      if (exactMatch) {
-        params.set("exact", "1");
-      }
-      params.set("page", page.toString());
+  // 検索APIを呼び出して結果を取得（副作用あり）
+  const fetchSearchResults = useCallback(
+    async (searchQuery: string, exactMatch: boolean, page: number) => {
+      const params = buildSearchUrlParams(searchQuery, exactMatch, page);
       params.set("pageSize", "25");
       const response = await fetch(`/api/search?${params.toString()}`);
       const data: SearchResponse = await response.json();
@@ -420,26 +336,72 @@ function HomeContent() {
       setResults(searchResults);
       setTotalResults(data.total || searchResults.length);
       setTotalPages(data.totalPages || 1);
-      setCurrentPage(data.page || 1);
+      setCurrentPage(data.page || page);
 
       // クライアントサイドキャッシュに保存（ページ1のみ）
-      if (typeof window !== "undefined" && page === 1) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      if (page === 1) {
+        const cacheKey = sessionStorageUtils.buildSearchCacheKey(
+          searchQuery,
+          exactMatch,
+          1,
+        );
+        sessionStorageUtils.saveSearchCache(cacheKey, data);
       }
 
-      // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-      // スクロールフラグをリセットして、useEffectでスクロール処理を実行
       setHasScrolledToEpisode(false);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "検索中にエラーが発生しました",
+    },
+    [],
+  );
+
+  const performSearch = useCallback(
+    async (
+      searchQuery: string,
+      exactMatch: boolean = false,
+      page: number = 1,
+    ) => {
+      // ガード節: 空のクエリは早期リターン
+      if (!searchQuery.trim()) {
+        return;
+      }
+
+      // キャッシュから検索結果を取得（ページ1のみキャッシュ）
+      const cacheKey = sessionStorageUtils.buildSearchCacheKey(
+        searchQuery,
+        exactMatch,
+        page,
       );
-      setResults([]);
-    } finally {
-      setLoading(false);
-      setIsInitialLoad(false);
-    }
-  };
+      const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
+
+      // ガード節: キャッシュがあれば早期リターン
+      if (cachedResults && page === 1) {
+        try {
+          const parsedData: SearchResponse = JSON.parse(cachedResults);
+          restoreSearchResultsFromCache(parsedData, page);
+          return;
+        } catch (e) {
+          console.error("Failed to parse cached results", e);
+        }
+      }
+
+      setLoading(true);
+      setError(null);
+      setHasSearched(true);
+      setSortBy("relevance");
+
+      try {
+        await fetchSearchResults(searchQuery, exactMatch, page);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "検索中にエラーが発生しました",
+        );
+        setResults([]);
+      } finally {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
+    },
+    [restoreSearchResultsFromCache, fetchSearchResults],
+  );
 
   useEffect(() => {
     // スラッシュ（/）キーで検索バーにフォーカスを移動
@@ -469,114 +431,44 @@ function HomeContent() {
     };
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // ページを1にリセット
-    setCurrentPage(1);
-    // URLパラメータを更新して検索状態を保存（ブラウザの戻るボタンで復元可能にする）
-    const params = new URLSearchParams();
-    if (query.trim()) {
-      params.set("q", query);
-    }
-    if (exactMatchMode) {
-      params.set("exact", "1");
-    }
-    params.set("page", "1");
-    const queryString = params.toString();
-    router.push(queryString ? `/?${queryString}` : "/", { scroll: false });
-    await performSearch(query, exactMatchMode, 1);
-  };
-
-  const handlePageChange = async (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
-
-    setCurrentPage(newPage);
-    const params = new URLSearchParams();
-    if (query.trim()) {
-      params.set("q", query);
-    }
-    if (exactMatchMode) {
-      params.set("exact", "1");
-    }
-    params.set("page", newPage.toString());
-    const queryString = params.toString();
-    router.push(`/?${queryString}`, { scroll: false });
-    await performSearch(query, exactMatchMode, newPage);
-
-    // ページトップにスクロール
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const formatDate = useCallback((dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
-  }, []);
-
-  // URLパラメータ構築をメモ化
-  const buildEpisodeUrl = useCallback(
-    (episodeId: string) => {
-      const params = new URLSearchParams();
-      if (query) {
-        params.set("q", query);
-      }
-      if (exactMatchMode) {
-        params.set("exact", "1");
-      }
+  const handleSearch = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setCurrentPage(1);
+      const params = buildSearchUrlParams(query, exactMatchMode, 1);
       const queryString = params.toString();
-      return `/episode/${episodeId}${queryString ? `?${queryString}` : ""}`;
+      router.push(queryString ? `/?${queryString}` : "/", { scroll: false });
+      await performSearch(query, exactMatchMode, 1);
     },
+    [query, exactMatchMode, router, performSearch],
+  );
+
+  const handlePageChange = useCallback(
+    async (newPage: number) => {
+      // ガード節: 無効なページ番号は早期リターン
+      if (newPage < 1 || newPage > totalPages) return;
+
+      setCurrentPage(newPage);
+      const params = buildSearchUrlParams(query, exactMatchMode, newPage);
+      const queryString = params.toString();
+      router.push(`/?${queryString}`, { scroll: false });
+      await performSearch(query, exactMatchMode, newPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [query, exactMatchMode, totalPages, router, performSearch],
+  );
+
+  // エピソードURLを構築（メモ化）
+  const buildEpisodeUrlMemoized = useCallback(
+    (episodeId: string) => buildEpisodeUrl(episodeId, query, exactMatchMode),
     [query, exactMatchMode],
   );
 
-  const highlightText = (text: string, query: string) => {
-    if (!query) return text;
-
-    const parts = text.split(new RegExp(`(${query})`, "gi"));
-    return parts.map((part, index) =>
-      part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={index} className="bg-yellow-200">
-          {part}
-        </mark>
-      ) : (
-        part
-      ),
-    );
-  };
-
   // 検索結果をソート（メモ化）
-  const sortedResults = useMemo(() => {
-    const sorted = [...results];
-
-    switch (sortBy) {
-      case "relevance":
-        // 関連度順（rankの降順、既にソート済み）
-        return sorted.sort((a, b) => b.rank - a.rank);
-      case "date-desc":
-        // 日付順（新着順）
-        return sorted.sort((a, b) => {
-          const dateA = new Date(a.publishedAt).getTime();
-          const dateB = new Date(b.publishedAt).getTime();
-          return dateB - dateA;
-        });
-      case "date-asc":
-        // 日付順（古い順）
-        return sorted.sort((a, b) => {
-          const dateA = new Date(a.publishedAt).getTime();
-          const dateB = new Date(b.publishedAt).getTime();
-          return dateA - dateB;
-        });
-      default:
-        return sorted;
-    }
-  }, [results, sortBy]);
+  const sortedResults = useMemo(
+    () => sortSearchResults(results, sortBy),
+    [results, sortBy],
+  );
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -723,59 +615,7 @@ function HomeContent() {
           </label>
         </div>
 
-        {(query === "" || (query !== "" && !hasSearched)) && (
-          <div className="mt-6 md-outlined-card">
-            <h3 className="text-title-large font-semibold text-gray-800 mb-6">
-              検索のコツ
-            </h3>
-
-            <div className="space-y-6">
-              <div className="border-l-4 border-freeagenda-light pl-4 py-2">
-                <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
-                  部分検索（デフォルト）
-                </h4>
-                <p className="text-body-medium text-gray-600 leading-relaxed">
-                  検索欄にキーワードを入力すると、<strong>キーワードを含むエピソード</strong>が表示されます。
-                  <br />
-                  <br />
-                  <strong>例：</strong>{" "}
-                  <code className="md-code">社会</code> →
-                  「社会」「社会問題」「会社員」などを含むエピソードが表示されます。
-                </p>
-              </div>
-
-              <div className="border-l-4 border-freeagenda-light pl-4 py-2">
-                <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
-                  完全一致検索
-                </h4>
-                <p className="text-body-medium text-gray-600 leading-relaxed">
-                  「完全一致検索」にチェックを入れると、<strong>キーワードと完全に一致する文字列</strong>を含むエピソードのみが表示されます。
-                  <br />
-                  <br />
-                  <strong>例：</strong>{" "}
-                  <code className="md-code">社会</code> →
-                  「社会」を含むエピソードのみが表示され、文字列が異なる「会社員」などは表示されません。
-                </p>
-              </div>
-
-              <div className="border-l-4 border-freeagenda-light pl-4 py-2">
-                <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
-                  キーワードの組み合わせ
-                </h4>
-                <p className="text-body-medium text-gray-600 leading-relaxed">
-                  複数のキーワードを<strong>スペース</strong>で区切って入力すると、条件を組み合わせて検索できます。
-                  <br />
-                  <br />
-                  <strong>例：</strong>{" "}
-                  <code className="md-code">社会 資本</code> →
-                  両方のキーワードを含むエピソードが表示されます。
-                  <br />
-                  完全一致検索を有効にすると、<strong>すべてのキーワードに完全一致</strong>するエピソードのみが表示されます。
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {(query === "" || (query !== "" && !hasSearched)) && <SearchTips />}
 
         {error && (
           <div className="mb-6 p-5 bg-red-50 border-2 border-red-200 text-red-800 rounded-xl shadow-sm">
@@ -836,126 +676,20 @@ function HomeContent() {
 
         {hasSearched && query !== "" && (
           <div className="space-y-4">
-            {sortedResults.map((result, index) => (
-              <div
-                key={result.episodeId}
-                className="md-result-card relative"
-                style={{
-                  animation: `fadeIn 0.3s ease-out ${index * 0.05}s both`,
-                }}
-                onClick={(e) => {
-                  // リンクやボタンをクリックした場合は、カード全体のクリックを無視
-                  if ((e.target as HTMLElement).closest("a, button")) {
-                    return;
-                  }
-                  // 最後にクリックした検索結果のIDを保存（戻ったときにスクロール位置を復元するため）
-                  if (typeof window !== "undefined") {
-                    sessionStorage.setItem(
-                      "lastClickedEpisodeId",
-                      result.episodeId,
-                    );
-                  }
-                  router.push(buildEpisodeUrl(result.episodeId));
-                }}
-                onKeyDown={(e) => {
-                  // リンクやボタンにフォーカスがある場合は、カード全体のキーボード操作を無視
-                  if ((e.target as HTMLElement).closest("a, button")) {
-                    return;
-                  }
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    // 最後にクリックした検索結果のIDを保存（戻ったときにスクロール位置を復元するため）
-                    if (typeof window !== "undefined") {
-                      sessionStorage.setItem(
-                        "lastClickedEpisodeId",
-                        result.episodeId,
-                      );
-                    }
-                    router.push(buildEpisodeUrl(result.episodeId));
-                  }
-                }}
-                tabIndex={-1}
-                role="button"
-                aria-label={`エピソードを開く: ${result.title.replace(/<[^>]*>/g, "")}`}
-                data-episode-id={result.episodeId}
-                id={`episode-${result.episodeId}`}
-              >
-                <h2 className="text-title-large font-bold mb-3">
-                  <Link
-                    href={buildEpisodeUrl(result.episodeId)}
-                    className="text-freeagenda-dark hover:text-freeagenda-dark/80 transition-colors focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 rounded-sm pointer-events-auto"
-                    onClick={() => {
-                      // リンクをクリックしたときにも lastClickedEpisodeId を保存
-                      if (typeof window !== "undefined") {
-                        sessionStorage.setItem(
-                          "lastClickedEpisodeId",
-                          result.episodeId,
-                        );
-                      }
-                    }}
-                    dangerouslySetInnerHTML={{ __html: result.title }}
-                  />
-                </h2>
-
-                <div className="text-label-medium text-gray-500 mb-4">
-                  {formatDate(result.publishedAt)}
-                </div>
-
-                {result.keywordPreviews && result.keywordPreviews.length > 0 ? (
-                  <div className="space-y-4 mb-5">
-                    {result.keywordPreviews.map((kp, index) => (
-                      <div
-                        key={index}
-                        className="border-l-2 border-freeagenda-light pl-3"
-                      >
-                        <div className="text-label-small font-semibold text-freeagenda-dark mb-1">
-                          「{kp.keyword}」を含む箇所
-                        </div>
-                        <p
-                          className="text-body-medium text-gray-700 leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: kp.fragment }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  result.preview && (
-                    <p
-                      className="text-body-large text-gray-700 mb-5 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: result.preview }}
-                    />
-                  )
-                )}
-
-                <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
-                  <Link
-                    href={buildEpisodeUrl(result.episodeId)}
-                    className="flex-1 md-outlined-button flex items-center justify-center text-center min-h-[50px]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // リンクをクリックしたときにも lastClickedEpisodeId を保存
-                      if (typeof window !== "undefined") {
-                        sessionStorage.setItem(
-                          "lastClickedEpisodeId",
-                          result.episodeId,
-                        );
-                      }
-                    }}
-                  >
-                    エピソード詳細を見る
-                  </Link>
-                  <a
-                    href={result.listenUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 md-filled-button flex items-center justify-center text-center min-h-[50px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    LISTENで聴く
-                  </a>
-                </div>
-              </div>
-            ))}
+            {sortedResults.map((result, index) => {
+              const episodeUrl = buildEpisodeUrlMemoized(result.episodeId);
+              const formattedDateString = formatDate(result.publishedAt);
+              return (
+                <SearchResultCard
+                  key={result.episodeId}
+                  result={result}
+                  index={index}
+                  episodeUrl={episodeUrl}
+                  formattedDate={formattedDateString}
+                  onEpisodeClick={handleEpisodeClick}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -964,50 +698,12 @@ function HomeContent() {
           hasSearched &&
           query !== "" &&
           totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || loading}
-                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                前へ
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum: number;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      disabled={loading}
-                      className={`px-3 py-2 text-body-medium border rounded-md transition-colors ${
-                        currentPage === pageNum
-                          ? "bg-freeagenda-dark text-white border-freeagenda-dark"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || loading}
-                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                次へ
-              </button>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              loading={loading}
+              onPageChange={handlePageChange}
+            />
           )}
 
         {results.length === 0 &&
