@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { formatTimestamp } from '@/lib/transcript/timestamp';
+import { useState, useEffect } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { formatTimestamp } from "@/lib/transcript/timestamp";
 
 interface Episode {
   episodeId: string;
@@ -26,18 +26,18 @@ export default function EpisodeDetail() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const episodeId = params.id as string;
-  const searchQuery = searchParams.get('q');
-  const exactMatchParam = searchParams.get('exact') === '1';
+  const searchQuery = searchParams.get("q");
+  const exactMatchParam = searchParams.get("exact") === "1";
 
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [matchPositions, setMatchPositions] = useState<MatchPosition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTranscript, setEditedTranscript] = useState('');
+  const [editedTranscript, setEditedTranscript] = useState("");
   const [saving, setSaving] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -49,32 +49,45 @@ export default function EpisodeDetail() {
       setError(null);
 
       try {
-        const queryParam = searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : '';
+        const queryParam = searchQuery
+          ? `?q=${encodeURIComponent(searchQuery)}`
+          : "";
         const response = await fetch(`/api/episode/${episodeId}${queryParam}`);
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'エピソードの取得に失敗しました');
+          throw new Error(data.error || "エピソードの取得に失敗しました");
         }
 
         setEpisode(data.episode);
         setMatchPositions(data.allMatchPositions || []);
-        setEditedTranscript(data.episode.transcriptText || '');
-        
+        setEditedTranscript(data.episode.transcriptText || "");
+
         // デバッグログ（開発環境のみ）
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[DEBUG] エピソードデータ:', data.episode);
-          console.log('[DEBUG] マッチポジション:', data.allMatchPositions);
-          data.allMatchPositions?.forEach((match: MatchPosition, index: number) => {
-            if (match.timestamp) {
-              console.log(`[DEBUG] タイムスタンプ [${index}]:`, match.timestamp);
-            } else {
-              console.warn(`[DEBUG] タイムスタンプなし [${index}]:`, match.field, match.text.substring(0, 50));
-            }
-          });
+        if (process.env.NODE_ENV === "development") {
+          console.log("[DEBUG] エピソードデータ:", data.episode);
+          console.log("[DEBUG] マッチポジション:", data.allMatchPositions);
+          data.allMatchPositions?.forEach(
+            (match: MatchPosition, index: number) => {
+              if (match.timestamp) {
+                console.log(
+                  `[DEBUG] タイムスタンプ [${index}]:`,
+                  match.timestamp,
+                );
+              } else {
+                console.warn(
+                  `[DEBUG] タイムスタンプなし [${index}]:`,
+                  match.field,
+                  match.text.substring(0, 50),
+                );
+              }
+            },
+          );
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'エピソードの取得に失敗しました');
+        setError(
+          err instanceof Error ? err.message : "エピソードの取得に失敗しました",
+        );
       } finally {
         setLoading(false);
       }
@@ -86,10 +99,10 @@ export default function EpisodeDetail() {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('ja-JP', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+      return date.toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     } catch {
       return dateString;
@@ -101,10 +114,10 @@ export default function EpisodeDetail() {
     setPasswordError(null);
 
     try {
-      const response = await fetch('/api/auth/verify-password', {
-        method: 'POST',
+      const response = await fetch("/api/auth/verify-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ password }),
       });
@@ -112,27 +125,33 @@ export default function EpisodeDetail() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '認証に失敗しました');
+        throw new Error(data.error || "認証に失敗しました");
       }
 
       if (data.authenticated) {
         setIsAuthenticated(true);
         setShowPasswordDialog(false);
-        setPassword('');
+        // パスワードをsessionStorageに保存（保存時に使用するため）
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("transcript_edit_password", password);
+        }
+        setPassword("");
         setIsEditing(true);
-        setEditedTranscript(episode?.transcriptText || '');
+        setEditedTranscript(episode?.transcriptText || "");
       } else {
-        setPasswordError('パスワードが正しくありません');
+        setPasswordError("パスワードが正しくありません");
       }
     } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : '認証に失敗しました');
+      setPasswordError(
+        err instanceof Error ? err.message : "認証に失敗しました",
+      );
     }
   };
 
   const handleEditClick = () => {
     if (isAuthenticated) {
       setIsEditing(true);
-      setEditedTranscript(episode?.transcriptText || '');
+      setEditedTranscript(episode?.transcriptText || "");
     } else {
       setShowPasswordDialog(true);
     }
@@ -145,17 +164,17 @@ export default function EpisodeDetail() {
     try {
       // パスワードを取得（セッションストレージから）
       // 編集ボタンをクリックしたときに既に認証済みなので、パスワードは存在するはず
-      const storedPassword = sessionStorage.getItem('transcript_edit_password');
+      const storedPassword = sessionStorage.getItem("transcript_edit_password");
       if (!storedPassword) {
         // 万が一パスワードが存在しない場合（通常は発生しない）
-        throw new Error('認証情報が見つかりません。再度認証してください。');
+        throw new Error("認証情報が見つかりません。再度認証してください。");
       }
 
       const response = await fetch(`/api/episode/${episodeId}/transcript`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${storedPassword}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedPassword}`,
         },
         body: JSON.stringify({
           transcriptText: editedTranscript,
@@ -165,7 +184,7 @@ export default function EpisodeDetail() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || '保存に失敗しました');
+        throw new Error(data.error || "保存に失敗しました");
       }
 
       // エピソード情報を更新（保存した文字起こしで更新）
@@ -174,12 +193,13 @@ export default function EpisodeDetail() {
         transcriptText: editedTranscript,
       });
       setIsEditing(false);
-      alert('文字起こしを保存しました');
+      alert("文字起こしを保存しました");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '保存に失敗しました';
+      const errorMessage =
+        err instanceof Error ? err.message : "保存に失敗しました";
       alert(errorMessage);
       // 認証エラーの場合は認証状態をリセット
-      if (errorMessage.includes('認証') || errorMessage.includes('認証情報')) {
+      if (errorMessage.includes("認証") || errorMessage.includes("認証情報")) {
         setIsAuthenticated(false);
         setIsEditing(false);
         setShowPasswordDialog(true);
@@ -249,11 +269,10 @@ export default function EpisodeDetail() {
           </div>
           <div className="md-elevated-card">
             <div className="text-center py-10">
-              <p className="text-red-600 mb-4">{error || 'エピソードが見つかりませんでした'}</p>
-              <Link
-                href="/"
-                className="md-text-button"
-              >
+              <p className="text-red-600 mb-4">
+                {error || "エピソードが見つかりませんでした"}
+              </p>
+              <Link href="/" className="md-text-button">
                 検索ページに戻る
               </Link>
             </div>
@@ -269,11 +288,11 @@ export default function EpisodeDetail() {
         <div className="mb-6">
           <Link
             href={(() => {
-              if (!searchQuery) return '/';
+              if (!searchQuery) return "/";
               const params = new URLSearchParams();
-              params.set('q', searchQuery);
+              params.set("q", searchQuery);
               if (exactMatchParam) {
-                params.set('exact', '1');
+                params.set("exact", "1");
               }
               return `/?${params.toString()}`;
             })()}
@@ -316,7 +335,9 @@ export default function EpisodeDetail() {
 
           {episode.description && (
             <div className="mb-8">
-              <h2 className="text-title-large font-semibold text-gray-800 mb-3">説明</h2>
+              <h2 className="text-title-large font-semibold text-gray-800 mb-3">
+                説明
+              </h2>
               <p className="text-body-large text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {episode.description}
               </p>
@@ -326,7 +347,8 @@ export default function EpisodeDetail() {
           {searchQuery && matchPositions.length > 0 && (
             <div className="mb-8">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
-                検索キーワード「{searchQuery}」のマッチ箇所 ({matchPositions.length}箇所)
+                検索キーワード「{searchQuery}」のマッチ箇所 (
+                {matchPositions.length}箇所)
               </h2>
               <div className="space-y-4">
                 {matchPositions.map((match, index) => (
@@ -336,17 +358,25 @@ export default function EpisodeDetail() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-label-small font-semibold text-freeagenda-dark">
-                        {match.field === 'transcript_text' ? '文字起こし' : '説明文'} - マッチ {index + 1}
+                        {match.field === "transcript_text"
+                          ? "文字起こし"
+                          : "説明文"}{" "}
+                        - マッチ {index + 1}
                       </div>
                       {match.timestamp && (
                         <div className="text-label-small font-medium text-freeagenda-dark bg-white px-2.5 py-1 rounded-md border border-freeagenda-light">
-                          {formatTimestamp(match.timestamp.startTime)} - {formatTimestamp(match.timestamp.endTime)}
+                          {formatTimestamp(match.timestamp.startTime)} -{" "}
+                          {formatTimestamp(match.timestamp.endTime)}
                         </div>
                       )}
                     </div>
                     <p
                       className="text-body-medium text-gray-700 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: match.text.replace(/<em>/g, '<mark>').replace(/<\/em>/g, '</mark>') }}
+                      dangerouslySetInnerHTML={{
+                        __html: match.text
+                          .replace(/<em>/g, "<mark>")
+                          .replace(/<\/em>/g, "</mark>"),
+                      }}
                     />
                   </div>
                 ))}
@@ -357,7 +387,8 @@ export default function EpisodeDetail() {
           {searchQuery && matchPositions.length === 0 && (
             <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-body-medium text-yellow-800">
-                検索キーワード「{searchQuery}」のマッチ箇所が見つかりませんでした。
+                検索キーワード「{searchQuery}
+                」のマッチ箇所が見つかりませんでした。
               </p>
             </div>
           )}
@@ -399,7 +430,7 @@ export default function EpisodeDetail() {
                       type="button"
                       onClick={() => {
                         setShowPasswordDialog(false);
-                        setPassword('');
+                        setPassword("");
                         setPasswordError(null);
                       }}
                       className="md-outlined-button"
@@ -437,7 +468,7 @@ export default function EpisodeDetail() {
                       disabled={saving}
                       className="md-filled-button"
                     >
-                      {saving ? '保存中...' : '保存'}
+                      {saving ? "保存中..." : "保存"}
                     </button>
                     <button
                       onClick={() => {
@@ -454,8 +485,8 @@ export default function EpisodeDetail() {
                         setIsAuthenticated(false);
                         setIsEditing(false);
                         setShowPasswordDialog(false);
-                        if (typeof window !== 'undefined') {
-                          sessionStorage.removeItem('transcript_edit_password');
+                        if (typeof window !== "undefined") {
+                          sessionStorage.removeItem("transcript_edit_password");
                         }
                       }}
                       disabled={saving}
