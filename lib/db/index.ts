@@ -8,27 +8,6 @@ if (!process.env.OPENSEARCH_ENDPOINT) {
 
 let client: Client | null = null;
 
-// デバッグ: 環境変数の確認
-if (process.env.NODE_ENV === "development") {
-  console.log("[lib/db/index.ts] 環境変数の確認:");
-  console.log(
-    "- OPENSEARCH_ENDPOINT:",
-    process.env.OPENSEARCH_ENDPOINT ? "設定済み" : "未設定",
-  );
-  console.log(
-    "- OPENSEARCH_API_KEY:",
-    process.env.OPENSEARCH_API_KEY ? "設定済み" : "未設定",
-  );
-  console.log(
-    "- OPENSEARCH_USERNAME:",
-    process.env.OPENSEARCH_USERNAME ? "設定済み" : "未設定",
-  );
-  console.log(
-    "- OPENSEARCH_PASSWORD:",
-    process.env.OPENSEARCH_PASSWORD ? "設定済み" : "未設定",
-  );
-}
-
 if (process.env.OPENSEARCH_ENDPOINT) {
   // エンドポイントURLの末尾のスラッシュを削除
   let endpoint = process.env.OPENSEARCH_ENDPOINT.trim();
@@ -40,10 +19,6 @@ if (process.env.OPENSEARCH_ENDPOINT) {
   // AWS_REGIONが設定されていても、OPENSEARCH_API_KEYが設定されている場合はAPI Key認証を使用
   if (process.env.OPENSEARCH_API_KEY) {
     const apiKey = process.env.OPENSEARCH_API_KEY.trim();
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: API Key");
-    }
 
     // Elastic Cloud ServerlessのAPI Keyは、Authorization: ApiKey ${API_KEY} ヘッダー形式で使用
     // @opensearch-project/opensearchクライアントは、auth.apiKey形式を直接サポートしていないため、
@@ -68,12 +43,6 @@ if (process.env.OPENSEARCH_ENDPOINT) {
     process.env.OPENSEARCH_PASSWORD
   ) {
     // 基本認証を使用する場合（開発環境など）
-    const hasAuth = true;
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: 基本認証");
-    }
-
     client = new Client({
       node: endpoint,
       auth: {
@@ -82,10 +51,6 @@ if (process.env.OPENSEARCH_ENDPOINT) {
       },
     });
   } else {
-    if (process.env.NODE_ENV === "development") {
-      console.log("OpenSearch接続設定: エンドポイント設定済み, 認証: なし");
-    }
-
     client = new Client({
       node: endpoint,
     });
@@ -114,20 +79,6 @@ if (process.env.OPENSEARCH_ENDPOINT) {
           : undefined,
     });
   }
-} else {
-  if (process.env.NODE_ENV === "development") {
-    console.warn(
-      "[lib/db/index.ts] OPENSEARCH_ENDPOINTが設定されていません。クライアントは初期化されません。",
-    );
-  }
-}
-
-// デバッグ: クライアント初期化の確認
-if (process.env.NODE_ENV === "development") {
-  console.log(
-    "[lib/db/index.ts] クライアント初期化状態:",
-    client ? "初期化済み" : "未初期化",
-  );
 }
 
 export default client;
