@@ -32,12 +32,17 @@ export default function Coffee() {
           </h1>
 
           <div className="prose prose-lg max-w-none mb-8">
-            <p className="text-body-large text-gray-700 leading-relaxed mb-6">
-              このサイトでは、エピソードの文字起こしの誤字脱字や表記の揺れを手動でチェックしていきます。
-            </p>
-            <p className="text-body-large text-gray-700 leading-relaxed mb-8">
-              より正確な検索結果を提供するため、継続的に改善を続けています。もしこのサイトが役に立ったら、コーヒーを奢っていただけると嬉しいです。
-            </p>
+            <div className="text-body-large text-gray-700 leading-relaxed mb-6 space-y-3">
+              <p>
+                このサイトでは、自動文字起こしで出てしまう誤字や表記ゆれを、検索しやすくするために手作業で直しています。
+              </p>
+              <p>
+                今は、だいたい週に3エピソードくらいのペースで進めています。
+              </p>
+              <p>
+                もし「ちょっと便利かも」と思ってもらえたら、コーヒー一杯分のサポートをもらえると嬉しいです。
+              </p>
+            </div>
 
             <div className="flex justify-center mb-8">
               <a
