@@ -19,6 +19,15 @@ interface SearchResult {
   rank: number;
 }
 
+interface SearchResponse {
+  results: SearchResult[];
+  count: number;
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  totalPages?: number;
+}
+
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,6 +44,9 @@ function HomeContent() {
   const [exactMatchMode, setExactMatchMode] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
   const [latestEpisode, setLatestEpisode] = useState<{
     episodeNumber: string | null;
     title: string;
@@ -129,6 +141,8 @@ function HomeContent() {
   useEffect(() => {
     const urlQuery = searchParams.get("q");
     const urlExactMatch = searchParams.get("exact") === "1";
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    setCurrentPage(urlPage);
 
     if (urlQuery && urlQuery !== query) {
       setQuery(urlQuery);
@@ -185,7 +199,7 @@ function HomeContent() {
             params.set("exact", "1");
           }
           const response = await fetch(`/api/search?${params.toString()}`);
-          const data = await response.json();
+          const data: SearchResponse = await response.json();
 
           if (!response.ok) {
             throw new Error(data.error || "検索に失敗しました");
@@ -193,6 +207,9 @@ function HomeContent() {
 
           const searchResults = data.results || [];
           setResults(searchResults);
+          setTotalResults(data.total || searchResults.length);
+          setTotalPages(data.totalPages || 1);
+          setCurrentPage(data.page || 1);
 
           // クライアントサイドキャッシュに保存
           if (typeof window !== "undefined") {
@@ -268,21 +285,25 @@ function HomeContent() {
   const performSearch = async (
     searchQuery: string,
     exactMatch: boolean = false,
+    page: number = 1,
   ) => {
     if (!searchQuery.trim()) {
       return;
     }
 
-    // クライアントサイドキャッシュから検索結果を取得
-    const cacheKey = `search:${searchQuery}:${exactMatch ? "exact" : "partial"}`;
+    // クライアントサイドキャッシュから検索結果を取得（ページ1のみキャッシュ）
+    const cacheKey = `search:${searchQuery}:${exactMatch ? "exact" : "partial"}:${page}`;
     const cachedResults =
       typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null;
 
-    if (cachedResults) {
-      // キャッシュから結果を復元
+    if (cachedResults && page === 1) {
+      // キャッシュから結果を復元（ページ1のみ）
       try {
-        const parsedResults = JSON.parse(cachedResults);
-        setResults(parsedResults);
+        const parsedData: SearchResponse = JSON.parse(cachedResults);
+        setResults(parsedData.results || []);
+        setTotalResults(parsedData.total || parsedData.results?.length || 0);
+        setTotalPages(parsedData.totalPages || 1);
+        setCurrentPage(parsedData.page || 1);
         setHasSearched(true);
         setSortBy("relevance");
         setLoading(false);
@@ -305,8 +326,10 @@ function HomeContent() {
       if (exactMatch) {
         params.set("exact", "1");
       }
+      params.set("page", page.toString());
+      params.set("pageSize", "50");
       const response = await fetch(`/api/search?${params.toString()}`);
-      const data = await response.json();
+      const data: SearchResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "検索に失敗しました");
@@ -337,6 +360,9 @@ function HomeContent() {
 
       const searchResults = data.results || [];
       setResults(searchResults);
+      setTotalResults(data.total || searchResults.length);
+      setTotalPages(data.totalPages || 1);
+      setCurrentPage(data.page || 1);
 
       // クライアントサイドキャッシュに保存
       if (typeof window !== "undefined") {
@@ -386,6 +412,8 @@ function HomeContent() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    // ページを1にリセット
+    setCurrentPage(1);
     // URLパラメータを更新して検索状態を保存（ブラウザの戻るボタンで復元可能にする）
     const params = new URLSearchParams();
     if (query.trim()) {
@@ -394,9 +422,30 @@ function HomeContent() {
     if (exactMatchMode) {
       params.set("exact", "1");
     }
+    params.set("page", "1");
     const queryString = params.toString();
     router.push(queryString ? `/?${queryString}` : "/", { scroll: false });
-    await performSearch(query, exactMatchMode);
+    await performSearch(query, exactMatchMode, 1);
+  };
+
+  const handlePageChange = async (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    
+    setCurrentPage(newPage);
+    const params = new URLSearchParams();
+    if (query.trim()) {
+      params.set("q", query);
+    }
+    if (exactMatchMode) {
+      params.set("exact", "1");
+    }
+    params.set("page", newPage.toString());
+    const queryString = params.toString();
+    router.push(`/?${queryString}`, { scroll: false });
+    await performSearch(query, exactMatchMode, newPage);
+    
+    // ページトップにスクロール
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const formatDate = (dateString: string) => {
@@ -585,7 +634,7 @@ function HomeContent() {
         </form>
 
         {/* 検索モード選択チェックボックス */}
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6 flex items-center justify-center gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -668,10 +717,11 @@ function HomeContent() {
         )}
 
         {results.length > 0 && hasSearched && query !== "" && (
-          <div className="mb-6 flex items-center justify-between">
-            <div className="text-label-large text-gray-600 font-medium">
-              {results.length}件の検索結果
-            </div>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-label-large text-gray-600 font-medium">
+                {totalResults > 0 ? `全${totalResults}件中 ${((currentPage - 1) * 50) + 1}-${Math.min(currentPage * 50, totalResults)}件を表示` : `${results.length}件の検索結果`}
+              </div>
             <div className="flex items-center gap-3">
               <label
                 htmlFor="sort-select"
@@ -841,6 +891,54 @@ function HomeContent() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ページネーション */}
+        {results.length > 0 && hasSearched && query !== "" && totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              前へ
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    disabled={loading}
+                    className={`px-3 py-2 text-body-medium border rounded-md transition-colors ${
+                      currentPage === pageNum
+                        ? "bg-freeagenda-dark text-white border-freeagenda-dark"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              次へ
+            </button>
           </div>
         )}
 

@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get("q");
   const exactMatchParam = searchParams.get("exact") === "1";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "50", 10);
+  const from = (page - 1) * pageSize;
 
   if (!query || query.trim() === "") {
     return NextResponse.json(
@@ -203,7 +206,8 @@ export async function GET(request: NextRequest) {
           { _score: { order: "desc" } },
           { published_at: { order: "desc" } },
         ],
-        size: 50,
+        from: from,
+        size: pageSize,
         // パフォーマンス最適化: タイムアウト設定（デフォルトより短く）
         timeout: "5s",
       },
@@ -214,8 +218,10 @@ export async function GET(request: NextRequest) {
     // 検索結果を整形
     // OpenSearch 3.xでは、レスポンスが直接返される
     const resultProcessStart = performance.now();
-    const hits =
-      (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
+    const responseBody = (response as any).body || response;
+    const hits = responseBody.hits?.hits || [];
+    const totalHits = responseBody.hits?.total?.value || responseBody.hits?.total || 0;
+    const totalPages = Math.ceil(totalHits / pageSize);
 
     const results = hits.map((hit: any) => {
       const source = hit._source;
@@ -633,7 +639,14 @@ export async function GET(request: NextRequest) {
 
     const resultProcessTime = performance.now() - resultProcessStart;
 
-    const responseData = { results, count: results.length };
+    const responseData = {
+      results,
+      count: results.length,
+      total: totalHits,
+      page,
+      pageSize,
+      totalPages,
+    };
 
     // 検索結果をキャッシュに保存
     const cacheSaveStart = performance.now();

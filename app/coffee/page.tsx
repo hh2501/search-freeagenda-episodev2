@@ -61,24 +61,26 @@ export default function Coffee() {
               <p className="text-body-medium text-gray-600 mb-4">
                 手動でチェックしたエピソードの状況は、以下のページで確認できます。
               </p>
-              <Link
-                href="/coffee/checklist"
-                className="md-outlined-button inline-flex items-center gap-2"
-              >
-                チェックリストを見る
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div className="flex justify-center">
+                <Link
+                  href="/coffee/checklist"
+                  className="md-outlined-button inline-flex items-center gap-2"
                 >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
+                  チェックリストを見る
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
