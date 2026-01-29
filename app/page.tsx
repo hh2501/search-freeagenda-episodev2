@@ -881,6 +881,15 @@ function HomeContent() {
                   <Link
                     href={buildEpisodeUrl(result.episodeId)}
                     className="text-freeagenda-dark hover:text-freeagenda-dark/80 transition-colors focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 rounded-sm pointer-events-auto"
+                    onClick={() => {
+                      // リンクをクリックしたときにも lastClickedEpisodeId を保存
+                      if (typeof window !== "undefined") {
+                        sessionStorage.setItem(
+                          "lastClickedEpisodeId",
+                          result.episodeId,
+                        );
+                      }
+                    }}
                     dangerouslySetInnerHTML={{ __html: result.title }}
                   />
                 </h2>
@@ -919,7 +928,16 @@ function HomeContent() {
                   <Link
                     href={buildEpisodeUrl(result.episodeId)}
                     className="flex-1 md-outlined-button flex items-center justify-center text-center min-h-[50px]"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // リンクをクリックしたときにも lastClickedEpisodeId を保存
+                      if (typeof window !== "undefined") {
+                        sessionStorage.setItem(
+                          "lastClickedEpisodeId",
+                          result.episodeId,
+                        );
+                      }
+                    }}
                   >
                     エピソード詳細を見る
                   </Link>
