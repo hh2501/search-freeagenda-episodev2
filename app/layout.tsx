@@ -7,6 +7,8 @@ const notoSansJP = Noto_Sans_JP({
   weight: ["400", "500", "700"],
   subsets: ["latin"],
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
