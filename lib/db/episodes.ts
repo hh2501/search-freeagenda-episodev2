@@ -1,9 +1,11 @@
-import client, { INDEX_NAME, initializeIndex } from './index';
-import { Episode } from '../rss/parser';
+import client, { INDEX_NAME, initializeIndex } from "./index";
+import { Episode } from "../rss/parser";
 
 export async function saveEpisode(episode: Episode): Promise<void> {
   if (!client) {
-    throw new Error('OpenSearchクライアントが設定されていません。OPENSEARCH_ENDPOINTを確認してください。');
+    throw new Error(
+      "OpenSearchクライアントが設定されていません。OPENSEARCH_ENDPOINTを確認してください。",
+    );
   }
 
   // インデックスが存在しない場合は作成
@@ -26,15 +28,21 @@ export async function saveEpisode(episode: Episode): Promise<void> {
   });
 }
 
-export async function saveTranscript(episodeId: string, transcriptText: string): Promise<void> {
+export async function saveTranscript(
+  episodeId: string,
+  transcriptText: string,
+): Promise<void> {
   if (!client) {
-    throw new Error('OpenSearchクライアントが設定されていません。OPENSEARCH_ENDPOINTを確認してください。');
+    throw new Error(
+      "OpenSearchクライアントが設定されていません。OPENSEARCH_ENDPOINTを確認してください。",
+    );
   }
 
   // インデックスが存在しない場合は作成
   await initializeIndex();
 
   // 文字起こしを更新（エピソードが存在する場合のみ）
+  const now = new Date().toISOString();
   try {
     await client.update({
       index: INDEX_NAME,
@@ -42,7 +50,7 @@ export async function saveTranscript(episodeId: string, transcriptText: string):
       body: {
         doc: {
           transcript_text: transcriptText,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         },
       },
       refresh: true,
@@ -56,7 +64,7 @@ export async function saveTranscript(episodeId: string, transcriptText: string):
         body: {
           episode_id: episodeId,
           transcript_text: transcriptText,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         },
         refresh: true,
       });
@@ -68,20 +76,21 @@ export async function saveTranscript(episodeId: string, transcriptText: string):
 
 export async function getAllEpisodes(): Promise<Episode[]> {
   if (!client) {
-    throw new Error('OpenSearchクライアントが設定されていません。');
+    throw new Error("OpenSearchクライアントが設定されていません。");
   }
 
   const response = await client.search({
     index: INDEX_NAME,
     body: {
       query: { match_all: {} },
-      sort: [{ published_at: { order: 'desc' } }],
+      sort: [{ published_at: { order: "desc" } }],
       size: 1000, // 最大1000件取得
     },
   });
 
   // OpenSearch 3.xでは、レスポンスが直接返される
-  const hits = (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
+  const hits =
+    (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
 
   return hits.map((hit: any) => ({
     episodeId: hit._source.episode_id,
@@ -96,9 +105,12 @@ export async function getAllEpisodes(): Promise<Episode[]> {
 /**
  * エピソードのpublished_atを更新
  */
-export async function updateEpisodePublishedAt(episodeId: string, publishedAt: Date): Promise<void> {
+export async function updateEpisodePublishedAt(
+  episodeId: string,
+  publishedAt: Date,
+): Promise<void> {
   if (!client) {
-    throw new Error('OpenSearchクライアントが設定されていません。');
+    throw new Error("OpenSearchクライアントが設定されていません。");
   }
 
   await client.update({
@@ -117,9 +129,11 @@ export async function updateEpisodePublishedAt(episodeId: string, publishedAt: D
 /**
  * タイトルでエピソードを検索してエピソードIDを取得
  */
-export async function findEpisodeByTitle(titlePattern: string): Promise<string | null> {
+export async function findEpisodeByTitle(
+  titlePattern: string,
+): Promise<string | null> {
   if (!client) {
-    throw new Error('OpenSearchクライアントが設定されていません。');
+    throw new Error("OpenSearchクライアントが設定されていません。");
   }
 
   const response = await client.search({
@@ -134,8 +148,9 @@ export async function findEpisodeByTitle(titlePattern: string): Promise<string |
     },
   });
 
-  const hits = (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
-  
+  const hits =
+    (response as any).hits?.hits || (response as any).body?.hits?.hits || [];
+
   if (hits.length === 0) {
     return null;
   }

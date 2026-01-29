@@ -12,6 +12,12 @@ interface ChecklistEpisode {
   checkedAt: string | null;
 }
 
+interface TranscriptModal {
+  episodeId: string;
+  title: string;
+  transcriptText: string;
+}
+
 export default function Checklist() {
   const [allEpisodes, setAllEpisodes] = useState<ChecklistEpisode[]>([]);
   const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>(
@@ -21,6 +27,9 @@ export default function Checklist() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [transcriptModal, setTranscriptModal] =
+    useState<TranscriptModal | null>(null);
+  const [loadingTranscript, setLoadingTranscript] = useState(false);
 
   useEffect(() => {
     const fetchChecklist = async () => {
@@ -99,7 +108,7 @@ export default function Checklist() {
         }
 
         // エピソード番号でソート（日付の若い順）
-        const sortedEpisodes = (data.episodes || []).sort(
+        const sortedEpisodes = data.episodes.sort(
           (a: ChecklistEpisode, b: ChecklistEpisode) => {
             const numA = parseInt(a.episodeNumber) || 0;
             const numB = parseInt(b.episodeNumber) || 0;
@@ -125,6 +134,33 @@ export default function Checklist() {
 
     fetchChecklist();
   }, []);
+
+  const handleShowTranscript = async (episodeId: string, title: string) => {
+    setLoadingTranscript(true);
+    try {
+      const response = await fetch(`/api/episode/${episodeId}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error("文字起こしの取得に失敗しました");
+      }
+      const data = await response.json();
+      setTranscriptModal({
+        episodeId,
+        title,
+        transcriptText: data.episode.transcriptText || "",
+      });
+    } catch (err) {
+      console.error("文字起こし取得エラー:", err);
+      setError("文字起こしの取得に失敗しました。");
+    } finally {
+      setLoadingTranscript(false);
+    }
+  };
+
+  const handleCloseTranscript = () => {
+    setTranscriptModal(null);
+  };
 
   return (
     <main className="min-h-screen p-4 md:p-8">
@@ -236,12 +272,20 @@ export default function Checklist() {
                             {episode.title}
                           </span>
                           {episode.episodeId && (
-                            <Link
-                              href={`/episode/${episode.episodeId}`}
-                              className="text-label-small text-freeagenda-dark hover:underline"
+                            <button
+                              onClick={() =>
+                                handleShowTranscript(
+                                  episode.episodeId,
+                                  episode.title,
+                                )
+                              }
+                              disabled={loadingTranscript}
+                              className="text-label-small text-freeagenda-dark hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              見る
-                            </Link>
+                              {loadingTranscript
+                                ? "読み込み中..."
+                                : "文字起こしを見る"}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -253,6 +297,60 @@ export default function Checklist() {
           </div>
         </div>
       </div>
+
+      {/* 文字起こしモーダル */}
+      {transcriptModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleCloseTranscript}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-title-large font-semibold text-gray-900">
+                {transcriptModal.title}
+              </h2>
+              <button
+                onClick={handleCloseTranscript}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="閉じる"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="prose prose-lg max-w-none">
+                <div className="whitespace-pre-wrap text-body-medium text-gray-700 leading-relaxed">
+                  {transcriptModal.transcriptText || "文字起こしがありません。"}
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={handleCloseTranscript}
+                className="md-filled-button"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -259,6 +259,8 @@ export async function initializeIndex(): Promise<void> {
             },
             created_at: { type: "date" },
             updated_at: { type: "date" },
+            checked: { type: "boolean" },
+            checked_at: { type: "date" },
           },
         },
       },
