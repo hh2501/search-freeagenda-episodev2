@@ -152,9 +152,12 @@ export default function HomeContent() {
   useEffect(() => {
     // 入力が空になったときに新しいランダムキーワードを設定し、検索状態をリセット
     if (query === "" && !isInitialLoad) {
-      const randomKeyword =
-        keywords[Math.floor(Math.random() * keywords.length)];
-      setPlaceholder(randomKeyword);
+      import("@/lib/search-keywords.json").then((module) => {
+        const kw = module.default as string[];
+        if (kw.length > 0) {
+          setPlaceholder(kw[Math.floor(Math.random() * kw.length)]);
+        }
+      });
       setHasSearched(false);
       setResults([]);
     }
