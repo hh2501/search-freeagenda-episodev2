@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { Noto_Sans_JP } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+
+const SpeedInsights = dynamic(
+  () => import("@vercel/speed-insights/next").then((m) => m.SpeedInsights),
+  { ssr: false },
+);
 
 const notoSansJP = Noto_Sans_JP({
   weight: ["400", "500", "700"],

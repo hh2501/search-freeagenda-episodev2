@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import searchKeywords from "@/lib/search-keywords.json";
 import type { SearchResultCardProps } from "./SearchResultCard";
 import type { PaginationProps } from "./Pagination";
 import { sessionStorageUtils } from "../utils/sessionStorage";
@@ -19,8 +18,6 @@ const SearchResultCard = dynamic<SearchResultCardProps>(
 );
 
 const Pagination = dynamic<PaginationProps>(() => import("./Pagination"));
-
-const keywords = searchKeywords as string[];
 
 interface SearchResult {
   episodeId: string;
@@ -77,9 +74,15 @@ export default function HomeContent() {
   );
 
   useEffect(() => {
-    // 初回マウント時にランダムキーワードを設定
-    const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
-    setPlaceholder(randomKeyword);
+    // キーワード一覧を遅延読み込みして初期バンドルを軽くする
+    import("@/lib/search-keywords.json").then((module) => {
+      const keywords = module.default as string[];
+      if (keywords.length > 0) {
+        const randomKeyword =
+          keywords[Math.floor(Math.random() * keywords.length)];
+        setPlaceholder(randomKeyword);
+      }
+    });
 
     // 検索のコツセクションを初期表示
     const tipsContainer = document.getElementById(
