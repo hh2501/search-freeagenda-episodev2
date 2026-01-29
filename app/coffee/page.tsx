@@ -57,14 +57,14 @@ export default function Coffee() {
               </a>
             </div>
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="mt-8 mb-8 pt-8 border-t border-gray-200">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
                 文字起こしチェックの状況
               </h2>
               <p className="text-body-medium text-gray-600 mb-4">
                 手動で修正したエピソードの状況は、以下のページで確認できます。
               </p>
-              <div className="flex justify-center mb-0">
+              <div className="flex justify-center">
                 <Link
                   href="/coffee/checklist"
                   className="md-outlined-button inline-flex items-center gap-2"
