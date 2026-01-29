@@ -1,9 +1,22 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import HomeHeader from "./components/HomeHeader";
-import SearchTipsServer from "./components/SearchTipsServer";
 import LatestEpisode from "./components/LatestEpisode";
 import HomeContent from "./components/HomeContent";
+
+const SearchTipsClient = dynamic(
+  () => import("./components/SearchTipsClient"),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="mt-6 min-h-[200px] md-outlined-card animate-pulse rounded-lg bg-gray-100"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
 
 // トップページの再検証間隔（秒）。キャッシュで繰り返し訪問を高速化
 export const revalidate = 60;
@@ -61,9 +74,9 @@ export default function Home() {
           <HomeContent />
         </Suspense>
 
-        {/* 検索のコツ: モバイルでは content-visibility で描画遅延 */}
+        {/* 検索のコツ: dynamic import で遅延読み込み（TBT 削減） */}
         <div id="search-tips-server-container" className="content-below-fold">
-          <SearchTipsServer />
+          <SearchTipsClient />
         </div>
 
         {/* ページ最下部: モバイルでは content-visibility で描画遅延 */}
