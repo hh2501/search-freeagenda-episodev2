@@ -8,8 +8,9 @@ const SpeedInsights = dynamic(
   { ssr: false },
 );
 
+// FCP短縮: ウェイトを2つに絞り転送量と描画待ちを削減（500は400で代替）
 const notoSansJP = Noto_Sans_JP({
-  weight: ["400", "500", "700"],
+  weight: ["400", "700"],
   subsets: ["latin"],
   display: "swap",
   preload: true,
@@ -39,14 +40,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <head>
-        {/* モバイルLCP短縮: サムネイルを最優先で取得 */}
-        <link
-          rel="preload"
-          href="/Thumbnail_image.jpg"
-          as="image"
-        />
-      </head>
       <body className={notoSansJP.className}>
         {children}
         <SpeedInsights />
