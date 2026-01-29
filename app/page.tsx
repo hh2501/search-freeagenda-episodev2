@@ -56,6 +56,7 @@ function HomeContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
+  const [hasScrolledToEpisode, setHasScrolledToEpisode] = useState(false);
   const [latestEpisode, setLatestEpisode] = useState<{
     episodeNumber: string | null;
     title: string;
@@ -71,23 +72,26 @@ function HomeContent() {
       if (lastClickedId) {
         const element = document.getElementById(`episode-${lastClickedId}`);
         if (element) {
-          element.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-          // スクロール後にハイライト表示
-          element.classList.add(
-            "ring-2",
-            "ring-freeagenda-dark",
-            "ring-offset-2",
-          );
+          // スクロール前に少し待機してDOMのレンダリングを確実にする
           setTimeout(() => {
-            element.classList.remove(
+            element.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            // スクロール後にハイライト表示
+            element.classList.add(
               "ring-2",
               "ring-freeagenda-dark",
               "ring-offset-2",
             );
-          }, 2000);
+            setTimeout(() => {
+              element.classList.remove(
+                "ring-2",
+                "ring-freeagenda-dark",
+                "ring-offset-2",
+              );
+            }, 2000);
+          }, 50);
         }
       }
     });
@@ -304,6 +308,41 @@ function HomeContent() {
       setResults([]);
     }
   }, [query, isInitialLoad]);
+
+  // 検索結果が表示された後、エピソード詳細ページから戻った場合にスクロール処理を実行
+  useEffect(() => {
+    // 検索結果が表示されている場合のみ実行（スクロール処理がまだ実行されていない場合）
+    if (
+      results.length > 0 &&
+      hasSearched &&
+      !loading &&
+      !hasScrolledToEpisode
+    ) {
+      // 少し遅延させてからスクロール処理を実行（DOMのレンダリングを待つ）
+      const timer = setTimeout(() => {
+        const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
+        if (lastClickedId) {
+          scrollToLastClickedEpisode();
+          setHasScrolledToEpisode(true);
+        }
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    results,
+    hasSearched,
+    loading,
+    hasScrolledToEpisode,
+    scrollToLastClickedEpisode,
+  ]);
+
+  // 検索が実行されたときにスクロールフラグをリセット
+  useEffect(() => {
+    if (loading) {
+      setHasScrolledToEpisode(false);
+    }
+  }, [loading]);
 
   const performSearch = async (
     searchQuery: string,
