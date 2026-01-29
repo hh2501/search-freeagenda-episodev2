@@ -286,12 +286,12 @@ function HomeContent() {
     // 検索結果が表示されている場合のみ実行
     if (results.length > 0 && hasSearched && !loading) {
       const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
-      
+
       if (lastClickedId && !hasScrolledToEpisode) {
         // DOMのレンダリングを待つため、複数のタイミングで試行
         const attemptScroll = (attempt: number, maxAttempts: number = 5) => {
           const element = document.getElementById(`episode-${lastClickedId}`);
-          
+
           if (element) {
             // 要素が見つかったらスクロール
             element.scrollIntoView({
@@ -322,12 +322,7 @@ function HomeContent() {
         setTimeout(() => attemptScroll(1), 200);
       }
     }
-  }, [
-    results,
-    hasSearched,
-    loading,
-    hasScrolledToEpisode,
-  ]);
+  }, [results, hasSearched, loading, hasScrolledToEpisode]);
 
   // 検索が実行されたときにスクロールフラグをリセット
   useEffect(() => {
@@ -740,11 +735,12 @@ function HomeContent() {
                   部分検索（デフォルト）
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
-                  キーワードをそのまま入力します。キーワードを含むエピソードが幅広く表示されます。
+                  検索欄にキーワードを入力すると、<strong>キーワードを含むエピソード</strong>が表示されます。
                   <br />
-                  <strong>例：</strong>
-                  <code className="md-code">社会</code>{" "}
-                  と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます。
+                  <br />
+                  <strong>例：</strong>{" "}
+                  <code className="md-code">社会</code> →
+                  「社会」「社会問題」「会社員」などを含むエピソードが表示されます。
                 </p>
               </div>
 
@@ -753,11 +749,12 @@ function HomeContent() {
                   完全一致検索
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
-                  「完全一致検索」チェックボックスにチェックを入れると、入力したキーワードに完全一致するエピソードのみを表示します。
+                  「完全一致検索」にチェックを入れると、<strong>キーワードと完全に一致する文字列</strong>を含むエピソードのみが表示されます。
                   <br />
-                  <strong>例：</strong>
-                  <code className="md-code">社会</code>{" "}
-                  と入力してチェックを入れると、「社会」という文字列を含むエピソードが表示されます。「会社員」など、文字の並びが異なるものは除外されます。
+                  <br />
+                  <strong>例：</strong>{" "}
+                  <code className="md-code">社会</code> →
+                  「社会」を含むエピソードのみが表示され、文字列が異なる「会社員」などは表示されません。
                 </p>
               </div>
 
@@ -766,11 +763,14 @@ function HomeContent() {
                   キーワードの組み合わせ
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
-                  複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。
+                  複数のキーワードを<strong>スペース</strong>で区切って入力すると、条件を組み合わせて検索できます。
                   <br />
-                  <strong>例：</strong>
+                  <br />
+                  <strong>例：</strong>{" "}
                   <code className="md-code">社会 資本</code> →
-                  両方のキーワードを含むエピソードが表示されます。完全一致検索をONにすると、すべてのキーワードに完全一致するエピソードのみが表示されます。
+                  両方のキーワードを含むエピソードが表示されます。
+                  <br />
+                  完全一致検索を有効にすると、<strong>すべてのキーワードに完全一致</strong>するエピソードのみが表示されます。
                 </p>
               </div>
             </div>
