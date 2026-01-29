@@ -16,12 +16,44 @@ export default function Home() {
         <HomeHeader />
         <LatestEpisode />
 
-        {/* useSearchParams() 使用のため Suspense 必須。フォーム風フォールバックで体感を維持 */}
+        {/* useSearchParams() 使用のため Suspense 必須。静的フォームで即時表示（しずかなインターネット方式） */}
         <Suspense
           fallback={
-            <div className="mb-8">
-              <div className="md-search-form relative rounded-xl border border-gray-200 bg-gray-50 p-4 animate-pulse">
-                <div className="h-10 bg-gray-200 rounded-md max-w-xl" />
+            <div className="mb-8" aria-hidden="true">
+              <div className="md-search-form relative">
+                <input
+                  type="text"
+                  readOnly
+                  placeholder="キーワードを入力（例: エンジニア）"
+                  className="md-search-form-input"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  className="md-search-form-button"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mb-6 flex items-center justify-center gap-3">
+                <span className="text-body-medium text-gray-500">
+                  完全一致検索
+                </span>
               </div>
             </div>
           }
