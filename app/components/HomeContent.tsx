@@ -449,7 +449,10 @@ export default function HomeContent() {
           {query && (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                searchInputRef.current?.focus();
+              }}
               className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none rounded-full p-1 hover:bg-gray-100"
               aria-label="入力をクリア"
             >
