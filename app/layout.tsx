@@ -19,7 +19,8 @@ const notoSansJP = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   title: "フリーアジェンダのあの回",
-  description: "フリーアジェンダのエピソードを検索できます",
+  description:
+    "「フリーアジェンダのあの回」は、思い出せないエピソードを簡単に見つけられる非公式の検索ツールです。トーク内容の細部まで、文字起こしから検索が可能です。",
   icons: {
     icon: "/Thumbnail_image.jpg",
     shortcut: "/Thumbnail_image.jpg",
