@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatTimestamp } from "@/lib/transcript/timestamp";
@@ -19,6 +19,50 @@ interface MatchPosition {
   field: string;
   position: number;
   timestamp?: { startTime: number; endTime: number };
+}
+
+/** 正規表現の特殊文字をエスケープ */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** HTMLをエスケープ（dangerouslySetInnerHTML用） */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** フラグメントのプレーンテキスト（ハイライトタグ除去） */
+function getPlainFragment(fragment: string): string {
+  return fragment.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1");
+}
+
+/** 完全一致時: フラグメントに検索クエリが含まれるか（大文字小文字無視） */
+function fragmentContainsExactQuery(
+  fragment: string,
+  searchQuery: string,
+): boolean {
+  if (!searchQuery.trim()) return true;
+  const plain = getPlainFragment(fragment);
+  return plain.toLowerCase().includes(searchQuery.trim().toLowerCase());
+}
+
+/**
+ * 完全一致時: 既存のハイライトを外し、検索クエリの出現箇所だけを <mark> で囲む
+ */
+function highlightExactMatchOnly(
+  fragment: string,
+  searchQuery: string,
+): string {
+  const plain = getPlainFragment(fragment);
+  const escapedPlain = escapeHtml(plain);
+  const escapedQuery = escapeHtml(searchQuery);
+  if (!escapedQuery) return escapedPlain;
+  const regex = new RegExp(escapeRegex(escapedQuery), "gi");
+  return escapedPlain.replace(regex, (m) => `<mark>${m}</mark>`);
 }
 
 export default function EpisodeDetail() {
@@ -41,6 +85,27 @@ export default function EpisodeDetail() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  /** 完全一致時は検索クエリが含まれるフラグメントのみ表示し、同一内容の重複を除去 */
+  const displayMatches = useMemo(() => {
+    let list = matchPositions;
+    if (searchQuery && exactMatchParam) {
+      list = list.filter((m) =>
+        fragmentContainsExactQuery(m.text, searchQuery),
+      );
+      // 同一フラグメント（フィールド・プレーンテキスト・開始時刻が同じ）は1件のみ表示
+      const seen = new Set<string>();
+      list = list.filter((m) => {
+        const plain = getPlainFragment(m.text).trim();
+        const startKey = m.timestamp?.startTime ?? "none";
+        const key = `${m.field}\n${plain}\n${startKey}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+    return list;
+  }, [matchPositions, searchQuery, exactMatchParam]);
+
   useEffect(() => {
     const fetchEpisode = async () => {
       if (!episodeId) return;
@@ -49,9 +114,10 @@ export default function EpisodeDetail() {
       setError(null);
 
       try {
-        const queryParam = searchQuery
-          ? `?q=${encodeURIComponent(searchQuery)}`
-          : "";
+        const params = new URLSearchParams();
+        if (searchQuery) params.set("q", searchQuery);
+        if (exactMatchParam) params.set("exact", "1");
+        const queryParam = params.toString() ? `?${params.toString()}` : "";
         const response = await fetch(`/api/episode/${episodeId}${queryParam}`);
         const data = await response.json();
 
@@ -94,7 +160,7 @@ export default function EpisodeDetail() {
     };
 
     fetchEpisode();
-  }, [episodeId, searchQuery]);
+  }, [episodeId, searchQuery, exactMatchParam]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -344,14 +410,14 @@ export default function EpisodeDetail() {
             </div>
           )}
 
-          {searchQuery && matchPositions.length > 0 && (
+          {searchQuery && displayMatches.length > 0 && (
             <div className="mb-8">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
                 検索キーワード「{searchQuery}」のマッチ箇所 (
-                {matchPositions.length}箇所)
+                {displayMatches.length}箇所)
               </h2>
               <div className="space-y-4">
-                {matchPositions.map((match, index) => (
+                {displayMatches.map((match, index) => (
                   <div
                     key={`${match.field}-${match.position}-${index}`}
                     className="border-l-4 border-freeagenda-light pl-4 py-3 bg-gray-50 rounded-r-md"
@@ -373,9 +439,11 @@ export default function EpisodeDetail() {
                     <p
                       className="text-body-medium text-gray-700 leading-relaxed"
                       dangerouslySetInnerHTML={{
-                        __html: match.text
-                          .replace(/<em>/g, "<mark>")
-                          .replace(/<\/em>/g, "</mark>"),
+                        __html: exactMatchParam
+                          ? highlightExactMatchOnly(match.text, searchQuery)
+                          : match.text
+                              .replace(/<em>/g, "<mark>")
+                              .replace(/<\/em>/g, "</mark>"),
                       }}
                     />
                   </div>
@@ -384,7 +452,7 @@ export default function EpisodeDetail() {
             </div>
           )}
 
-          {searchQuery && matchPositions.length === 0 && (
+          {searchQuery && displayMatches.length === 0 && (
             <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-body-medium text-yellow-800">
                 検索キーワード「{searchQuery}

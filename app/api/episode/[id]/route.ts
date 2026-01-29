@@ -15,6 +15,7 @@ export async function GET(
   const episodeId = params.id;
   const searchParams = request.nextUrl.searchParams;
   const searchQuery = searchParams.get("q"); // 検索クエリ（オプション）
+  const exactMatchParam = searchParams.get("exact") === "1"; // 完全一致検索
 
   if (!episodeId) {
     return NextResponse.json(
@@ -136,33 +137,49 @@ export async function GET(
     }
 
     if (searchQuery && searchQuery.trim()) {
-      // 検索クエリでハイライトを取得
-      const searchResponse = await client.search({
-        index: INDEX_NAME,
-        body: {
-          query: {
+      const queryText = searchQuery.trim();
+      // 完全一致時は match_phrase でフレーズ検索し、該当フラグメントのみハイライトされる
+      const textQuery = exactMatchParam
+        ? {
+            bool: {
+              must: [{ term: { episode_id: episodeId } }],
+              should: [
+                { match_phrase: { transcript_text: { query: queryText } } },
+                { match_phrase: { description: { query: queryText } } },
+                { match_phrase: { title: { query: queryText } } },
+              ],
+              minimum_should_match: 1,
+            },
+          }
+        : {
             bool: {
               must: [
                 { term: { episode_id: episodeId } },
                 {
                   multi_match: {
-                    query: searchQuery.trim(),
+                    query: queryText,
                     fields: ["title^10", "description^6", "transcript_text^4"],
                     type: "best_fields",
                   },
                 },
               ],
             },
-          },
+          };
+
+      // 検索クエリでハイライトを取得
+      const searchResponse = await client.search({
+        index: INDEX_NAME,
+        body: {
+          query: textQuery,
           highlight: {
             fields: {
               transcript_text: {
                 fragment_size: 200,
-                number_of_fragments: 20, // フラグメント数を削減（50→20）
+                number_of_fragments: 20,
               },
               description: {
                 fragment_size: 200,
-                number_of_fragments: 5, // フラグメント数を削減（10→5）
+                number_of_fragments: 5,
               },
             },
           },
@@ -190,6 +207,8 @@ export async function GET(
         highlights = hits[0].highlight || {};
 
         // すべてのマッチ箇所を収集（フラグメント順＝ドキュメント順でタイムスタンプを対応させる）
+        // 同一内容のフラグメントは1件のみ登録（完全一致検索で重複が返ることがあるため）
+        const transcriptSeen = new Set<string>();
         if (highlights.transcript_text) {
           const fragmentCount = highlights.transcript_text.length;
           highlights.transcript_text.forEach(
@@ -201,6 +220,13 @@ export async function GET(
                       totalFragments: fragmentCount,
                     })
                   : null;
+              const plainText = fragment
+                .replace(/<em[^>]*>(.*?)<\/em>/gi, "$1")
+                .trim();
+              const startKey = timestamp?.startTime ?? "none";
+              const dedupeKey = `transcript_text\n${plainText}\n${startKey}`;
+              if (transcriptSeen.has(dedupeKey)) return;
+              transcriptSeen.add(dedupeKey);
 
               if (process.env.NODE_ENV === "development") {
                 if (timestamp) {
@@ -224,7 +250,13 @@ export async function GET(
           );
         }
         if (highlights.description) {
+          const descSeen = new Set<string>();
           highlights.description.forEach((fragment: string, index: number) => {
+            const plainText = fragment
+              .replace(/<em[^>]*>(.*?)<\/em>/gi, "$1")
+              .trim();
+            if (descSeen.has(plainText)) return;
+            descSeen.add(plainText);
             allMatchPositions.push({
               text: fragment,
               field: "description",

@@ -69,6 +69,7 @@ export default function HomeContent() {
   const handleEpisodeClick = useCallback(
     (episodeId: string) => {
       sessionStorageUtils.saveLastClickedEpisodeId(episodeId);
+      sessionStorageUtils.setScrollToEpisodeOnReturn();
       router.push(buildEpisodeUrl(episodeId, query, exactMatchMode));
     },
     [query, exactMatchMode, router],
@@ -210,7 +211,8 @@ export default function HomeContent() {
     [],
   );
 
-  // 検索結果が表示された後、エピソード詳細ページから戻った場合にスクロール処理を実行
+  // 検索結果が表示された後、エピソード詳細ページから戻った場合のみスクロール処理を実行
+  // （完全一致⇔部分検索の切り替えやページ変更だけのときはスクロールしない）
   useEffect(() => {
     // ガード節: 条件を満たさない場合は早期リターン
     if (
@@ -227,6 +229,11 @@ export default function HomeContent() {
       return;
     }
 
+    if (!sessionStorageUtils.getScrollToEpisodeOnReturn()) {
+      return;
+    }
+
+    sessionStorageUtils.clearScrollToEpisodeOnReturn();
     setTimeout(() => attemptScrollToEpisode(lastClickedId, 1), 200);
   }, [
     results,

@@ -5,6 +5,7 @@
 
 const STORAGE_KEYS = {
   LAST_CLICKED_EPISODE_ID: "lastClickedEpisodeId",
+  SCROLL_TO_EPISODE_ON_RETURN: "scrollToEpisodeOnReturn",
   SEARCH_CACHE_PREFIX: "search:",
 } as const;
 
@@ -23,6 +24,32 @@ export const sessionStorageUtils = {
   getLastClickedEpisodeId: (): string | null => {
     if (typeof window === "undefined") return null;
     return sessionStorage.getItem(STORAGE_KEYS.LAST_CLICKED_EPISODE_ID);
+  },
+
+  /**
+   * エピソード詳細から戻ったときのみ検索結果へスクロールするフラグを立てる
+   */
+  setScrollToEpisodeOnReturn: (): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(STORAGE_KEYS.SCROLL_TO_EPISODE_ON_RETURN, "1");
+  },
+
+  /**
+   * 戻ったときスクロールするフラグを取得
+   */
+  getScrollToEpisodeOnReturn: (): boolean => {
+    if (typeof window === "undefined") return false;
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.SCROLL_TO_EPISODE_ON_RETURN) === "1"
+    );
+  },
+
+  /**
+   * 戻ったときスクロールするフラグをクリア
+   */
+  clearScrollToEpisodeOnReturn: (): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem(STORAGE_KEYS.SCROLL_TO_EPISODE_ON_RETURN);
   },
 
   /**
