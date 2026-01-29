@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import HomeHeader from "./components/HomeHeader";
 import SearchTipsServer from "./components/SearchTipsServer";
 import LatestEpisode from "./components/LatestEpisode";
@@ -48,6 +49,23 @@ export default function Home() {
         {/* 検索のコツ: サーバーコンポーネント（条件付き表示はクライアント側で制御） */}
         <div id="search-tips-server-container">
           <SearchTipsServer />
+        </div>
+
+        {/* ページ最下部: フッターリンク */}
+        <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="flex gap-4 justify-center items-center flex-wrap">
+            <a href="/about" className="md-text-button">
+              このサイトについて
+            </a>
+            {process.env.NODE_ENV !== "production" && (
+              <a href="/sync" className="md-text-button">
+                データ同期ページ
+              </a>
+            )}
+            <Link href="/coffee" className="md-text-button">
+              コーヒーを奢る
+            </Link>
+          </div>
         </div>
       </div>
     </main>

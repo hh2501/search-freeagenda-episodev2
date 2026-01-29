@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import searchKeywords from "@/lib/search-keywords.json";
@@ -19,9 +18,7 @@ const SearchResultCard = dynamic<SearchResultCardProps>(
   () => import("./SearchResultCard"),
 );
 
-const Pagination = dynamic<PaginationProps>(
-  () => import("./Pagination"),
-);
+const Pagination = dynamic<PaginationProps>(() => import("./Pagination"));
 
 const keywords = searchKeywords as string[];
 
@@ -682,22 +679,6 @@ export default function HomeContent() {
             </p>
           </div>
         )}
-
-      <div className="mt-12 pt-8 border-t border-gray-200">
-        <div className="flex gap-4 justify-center items-center flex-wrap">
-          <a href="/about" className="md-text-button">
-            このサイトについて
-          </a>
-          {process.env.NODE_ENV !== "production" && (
-            <a href="/sync" className="md-text-button">
-              データ同期ページ
-            </a>
-          )}
-          <Link href="/coffee" className="md-text-button">
-            コーヒーを奢る
-          </Link>
-        </div>
-      </div>
     </>
   );
 }
