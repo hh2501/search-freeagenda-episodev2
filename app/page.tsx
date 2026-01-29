@@ -155,7 +155,7 @@ function HomeContent() {
     const urlQuery = searchParams.get("q");
     const urlExactMatch = searchParams.get("exact") === "1";
     const urlPage = parseInt(searchParams.get("page") || "1", 10);
-    
+
     // クエリまたはページ番号が変わった場合に検索を実行
     const queryChanged = urlQuery && urlQuery !== query;
     const pageChanged = urlPage !== currentPage;
@@ -188,7 +188,8 @@ function HomeContent() {
           setIsInitialLoad(false);
 
           // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          setTimeout(() => scrollToLastClickedEpisode(), 0);
+          // スクロールフラグをリセットして、useEffectでスクロール処理を実行
+          setHasScrolledToEpisode(false);
           return; // キャッシュから復元した場合はAPIを呼び出さない
         } catch (e) {
           // キャッシュのパースに失敗した場合は通常の検索を実行
@@ -243,37 +244,8 @@ function HomeContent() {
           }
 
           // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-          requestAnimationFrame(() => {
-            if (typeof window !== "undefined") {
-              const lastClickedId = sessionStorage.getItem(
-                "lastClickedEpisodeId",
-              );
-              if (lastClickedId) {
-                const element = document.getElementById(
-                  `episode-${lastClickedId}`,
-                );
-                if (element) {
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                  // スクロール後にハイライト表示（視覚的にわかりやすく）
-                  element.classList.add(
-                    "ring-2",
-                    "ring-freeagenda-dark",
-                    "ring-offset-2",
-                  );
-                  setTimeout(() => {
-                    element.classList.remove(
-                      "ring-2",
-                      "ring-freeagenda-dark",
-                      "ring-offset-2",
-                    );
-                  }, 2000);
-                }
-              }
-            }
-          });
+          // スクロールフラグをリセットして、useEffectでスクロール処理を実行
+          setHasScrolledToEpisode(false);
         } catch (err) {
           setError(
             err instanceof Error ? err.message : "検索中にエラーが発生しました",
@@ -311,30 +283,50 @@ function HomeContent() {
 
   // 検索結果が表示された後、エピソード詳細ページから戻った場合にスクロール処理を実行
   useEffect(() => {
-    // 検索結果が表示されている場合のみ実行（スクロール処理がまだ実行されていない場合）
-    if (
-      results.length > 0 &&
-      hasSearched &&
-      !loading &&
-      !hasScrolledToEpisode
-    ) {
-      // 少し遅延させてからスクロール処理を実行（DOMのレンダリングを待つ）
-      const timer = setTimeout(() => {
-        const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
-        if (lastClickedId) {
-          scrollToLastClickedEpisode();
-          setHasScrolledToEpisode(true);
-        }
-      }, 150);
+    // 検索結果が表示されている場合のみ実行
+    if (results.length > 0 && hasSearched && !loading) {
+      const lastClickedId = sessionStorage.getItem("lastClickedEpisodeId");
+      
+      if (lastClickedId && !hasScrolledToEpisode) {
+        // DOMのレンダリングを待つため、複数のタイミングで試行
+        const attemptScroll = (attempt: number, maxAttempts: number = 5) => {
+          const element = document.getElementById(`episode-${lastClickedId}`);
+          
+          if (element) {
+            // 要素が見つかったらスクロール
+            element.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            // スクロール後にハイライト表示
+            element.classList.add(
+              "ring-2",
+              "ring-freeagenda-dark",
+              "ring-offset-2",
+            );
+            setTimeout(() => {
+              element.classList.remove(
+                "ring-2",
+                "ring-freeagenda-dark",
+                "ring-offset-2",
+              );
+            }, 2000);
+            setHasScrolledToEpisode(true);
+          } else if (attempt < maxAttempts) {
+            // 要素が見つからない場合、少し待ってから再試行
+            setTimeout(() => attemptScroll(attempt + 1, maxAttempts), 100);
+          }
+        };
 
-      return () => clearTimeout(timer);
+        // 最初の試行を少し遅延させて実行
+        setTimeout(() => attemptScroll(1), 200);
+      }
     }
   }, [
     results,
     hasSearched,
     loading,
     hasScrolledToEpisode,
-    scrollToLastClickedEpisode,
   ]);
 
   // 検索が実行されたときにスクロールフラグをリセット
@@ -343,6 +335,15 @@ function HomeContent() {
       setHasScrolledToEpisode(false);
     }
   }, [loading]);
+
+  // URLパラメータが変わったとき（エピソード詳細ページから戻った場合）にスクロールフラグをリセット
+  useEffect(() => {
+    const urlQuery = searchParams.get("q");
+    if (urlQuery) {
+      // 検索クエリがある場合、スクロールフラグをリセットして再スクロールを許可
+      setHasScrolledToEpisode(false);
+    }
+  }, [searchParams]);
 
   const performSearch = async (
     searchQuery: string,
@@ -432,7 +433,8 @@ function HomeContent() {
       }
 
       // 検索結果が表示されたら、最後にクリックした検索結果の位置にスクロール
-      setTimeout(() => scrollToLastClickedEpisode(), 0);
+      // スクロールフラグをリセットして、useEffectでスクロール処理を実行
+      setHasScrolledToEpisode(false);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "検索中にエラーが発生しました",
