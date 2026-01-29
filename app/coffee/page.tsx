@@ -36,9 +36,7 @@ export default function Coffee() {
               <p>
                 このサイトでは、自動文字起こしで出てしまう誤字や表記ゆれを、検索しやすくするために手作業で直しています。
               </p>
-              <p>
-                今は、だいたい週に3エピソードくらいのペースで進めています。
-              </p>
+              <p>今は、だいたい週に3エピソードくらいのペースで進めています。</p>
               <p>
                 もし「ちょっと便利かも」と思ってもらえたら、コーヒー一杯分のサポートをもらえると嬉しいです。
               </p>
@@ -66,7 +64,7 @@ export default function Coffee() {
               <p className="text-body-medium text-gray-600 mb-4">
                 手動で修正したエピソードの状況は、以下のページで確認できます。
               </p>
-              <div className="flex justify-center">
+              <div className="flex justify-center mb-0">
                 <Link
                   href="/coffee/checklist"
                   className="md-outlined-button inline-flex items-center gap-2"
