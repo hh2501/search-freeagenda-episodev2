@@ -58,6 +58,7 @@ export default function HomeContent() {
   );
   const [exactMatchMode, setExactMatchMode] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchResultsRef = useRef<HTMLDivElement>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -427,9 +428,6 @@ export default function HomeContent() {
       setCurrentPage(newPage);
       setLoading(true);
 
-      // スクロールを先に実行して体感速度を向上
-      window.scrollTo({ top: 0, behavior: "smooth" });
-
       // URLパラメータを更新（非ブロッキング）
       const params = buildSearchUrlParams(query, exactMatchMode, newPage);
       const queryString = params.toString();
@@ -437,6 +435,12 @@ export default function HomeContent() {
 
       // 検索を実行
       await performSearch(query, exactMatchMode, newPage);
+
+      // 検索結果の一番上から表示するようスクロール
+      searchResultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     },
     [query, exactMatchMode, totalPages, router, performSearch],
   );
@@ -586,7 +590,7 @@ export default function HomeContent() {
       )}
 
       {results.length > 0 && hasSearched && query !== "" && (
-        <div className="mb-6">
+        <div ref={searchResultsRef} className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="text-label-large text-gray-600 font-medium">
               {totalResults > 0
