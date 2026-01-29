@@ -27,7 +27,7 @@ export default function Coffee() {
         </div>
 
         <div className="md-elevated-card">
-          <h1 className="text-headline-large md:text-display-small font-bold mb-6 text-gray-900">
+          <h1 className="text-title-large font-bold mb-6 text-gray-900">
             コーヒーを奢る
           </h1>
 
@@ -59,14 +59,14 @@ export default function Coffee() {
                 文字起こしチェックの状況
               </h2>
               <p className="text-body-medium text-gray-600 mb-4">
-                手動でチェックしたエピソードの状況は、以下のページで確認できます。
+                手動で修正したエピソードの状況は、以下のページで確認できます。
               </p>
               <div className="flex justify-center">
                 <Link
                   href="/coffee/checklist"
                   className="md-outlined-button inline-flex items-center gap-2"
                 >
-                  チェックリストを見る
+                  文字起こしチェックリストを見る
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"

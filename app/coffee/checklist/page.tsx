@@ -192,9 +192,17 @@ export default function Checklist() {
           </h1>
 
           <div className="prose prose-lg max-w-none mb-8">
-            <p className="text-body-large text-gray-700 leading-relaxed mb-6">
-              エピソードの文字起こしの誤字脱字や表記の揺れを手動でチェックしたエピソードの一覧です。
-            </p>
+            <div className="text-body-large text-gray-700 leading-relaxed mb-6 space-y-3">
+              <p>
+                このサイトでは、自動文字起こしで出てしまう誤字や表記ゆれを、手作業でちょこちょこ直しています。
+              </p>
+              <p>
+                検索しやすくするために、だいたい週3エピソードくらいのペースで修正しています。
+              </p>
+              <p>
+                もし「便利だな」と思ってもらえたら、コーヒー一杯分のサポートをしてもらえると嬉しいです。
+              </p>
+            </div>
 
             {lastUpdated && (
               <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
