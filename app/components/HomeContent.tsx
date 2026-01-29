@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import searchKeywords from "@/lib/search-keywords.json";
-import SearchResultCard from "./SearchResultCard";
-import Pagination from "./Pagination";
+import type { SearchResultCardProps } from "./SearchResultCard";
+import type { PaginationProps } from "./Pagination";
 import { sessionStorageUtils } from "../utils/sessionStorage";
 import {
   sortSearchResults,
@@ -13,6 +14,14 @@ import {
   buildEpisodeUrl,
   buildSearchUrlParams,
 } from "../utils/searchHelpers";
+
+const SearchResultCard = dynamic<SearchResultCardProps>(
+  () => import("./SearchResultCard"),
+);
+
+const Pagination = dynamic<PaginationProps>(
+  () => import("./Pagination"),
+);
 
 const keywords = searchKeywords as string[];
 

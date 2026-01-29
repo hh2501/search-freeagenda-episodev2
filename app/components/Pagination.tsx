@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from "react";
 
-interface PaginationProps {
+export interface PaginationProps {
   currentPage: number;
   totalPages: number;
   loading: boolean;

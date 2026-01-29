@@ -14,7 +14,7 @@ interface SearchResult {
   rank: number;
 }
 
-interface SearchResultCardProps {
+export interface SearchResultCardProps {
   result: SearchResult;
   index: number;
   episodeUrl: string;
