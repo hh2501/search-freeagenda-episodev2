@@ -399,9 +399,9 @@ export default function HomeContent() {
       // 検索を実行
       await performSearch(query, exactMatchMode, newPage);
 
-      // 検索結果の一番上から表示するようスクロール
+      // 検索結果の一番上から表示するよう即時スクロール（アニメーションなし）
       searchResultsRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: "auto",
         block: "start",
       });
     },
