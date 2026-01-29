@@ -741,6 +741,7 @@ function HomeContent() {
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
                   キーワードをそのまま入力します。キーワードを含むエピソードが幅広く表示されます。
+                  <br />
                   <strong>例：</strong>
                   <code className="md-code">社会</code>{" "}
                   と入力すると、「社会」「社会問題」「会社員」などのキーワードを含むエピソードが表示されます。
@@ -753,6 +754,7 @@ function HomeContent() {
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
                   「完全一致検索」チェックボックスにチェックを入れると、入力したキーワードに完全一致するエピソードのみを表示します。
+                  <br />
                   <strong>例：</strong>
                   <code className="md-code">社会</code>{" "}
                   と入力してチェックを入れると、「社会」という文字列を含むエピソードが表示されます。「会社員」など、文字の並びが異なるものは除外されます。
@@ -765,6 +767,7 @@ function HomeContent() {
                 </h4>
                 <p className="text-body-medium text-gray-600 leading-relaxed">
                   複数のキーワードを半角スペースで区切って入力すると、条件を組み合わせて検索できます。
+                  <br />
                   <strong>例：</strong>
                   <code className="md-code">社会 資本</code> →
                   両方のキーワードを含むエピソードが表示されます。完全一致検索をONにすると、すべてのキーワードに完全一致するエピソードのみが表示されます。
