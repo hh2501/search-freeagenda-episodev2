@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import HomeHeader from "./components/HomeHeader";
 import SearchTipsServer from "./components/SearchTipsServer";
@@ -15,8 +16,18 @@ export default function Home() {
         <HomeHeader />
         <LatestEpisode />
 
-        {/* 検索フォーム・結果: クライアントコンポーネント（SSR で初期 HTML に含め、表示を早くする） */}
-        <HomeContent />
+        {/* useSearchParams() 使用のため Suspense 必須。フォーム風フォールバックで体感を維持 */}
+        <Suspense
+          fallback={
+            <div className="mb-8">
+              <div className="md-search-form relative rounded-xl border border-gray-200 bg-gray-50 p-4 animate-pulse">
+                <div className="h-10 bg-gray-200 rounded-md max-w-xl" />
+              </div>
+            </div>
+          }
+        >
+          <HomeContent />
+        </Suspense>
 
         {/* 検索のコツ: サーバーコンポーネント（条件付き表示はクライアント側で制御） */}
         <div id="search-tips-server-container">
