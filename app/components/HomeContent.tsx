@@ -84,13 +84,6 @@ export default function HomeContent() {
       }
     });
 
-    // 検索のコツセクションを初期表示
-    const tipsContainer = document.getElementById(
-      "search-tips-server-container",
-    );
-    if (tipsContainer) {
-      tipsContainer.style.display = "block";
-    }
   }, []);
 
   // URLパラメータから検索クエリを読み取って自動検索
@@ -163,19 +156,6 @@ export default function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
-  // 検索のコツセクションの表示/非表示を制御
-  useEffect(() => {
-    const tipsContainer = document.getElementById(
-      "search-tips-server-container",
-    );
-    if (tipsContainer) {
-      if (query === "" || (query !== "" && !hasSearched)) {
-        tipsContainer.style.display = "block";
-      } else {
-        tipsContainer.style.display = "none";
-      }
-    }
-  }, [query, hasSearched]);
 
   // 検索結果が表示された後、エピソード詳細から戻った場合にクリック前のスクロール位置を復元
   // （完全一致⇔部分検索の切り替えやページ変更だけのときは何もしない）
