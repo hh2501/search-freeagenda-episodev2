@@ -36,6 +36,9 @@ export const viewport = {
   themeColor: "#ffffff",
 };
 
+/** HTML をユーザーに近い Edge でレンダリングし TTFB 短縮（Vercel Edge Runtime） */
+export const runtime = "edge";
+
 export default function RootLayout({
   children,
 }: Readonly<{
