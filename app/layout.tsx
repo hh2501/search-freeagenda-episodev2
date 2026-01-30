@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { Noto_Sans_JP } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
+import CriticalCSS from "./components/CriticalCSS";
 import "./globals.css";
 
 const SpeedInsights = dynamic(
@@ -41,7 +43,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        {/* ファーストビュー用クリティカルCSSをインライン化（LCP短縮）。フルCSSは import "./globals.css" で Next が自動挿入 */}
+        <CriticalCSS />
+      </head>
       <body className={notoSansJP.className}>
+        <NextTopLoader
+          color="#304d5f"
+          initialPosition={0.1}
+          crawlSpeed={100}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #304d5f,0 0 5px #304d5f"
+        />
         {children}
         <SpeedInsights />
       </body>
