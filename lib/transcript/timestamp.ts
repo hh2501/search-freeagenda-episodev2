@@ -131,11 +131,67 @@ export interface FindTimestampOptions {
   fragmentIndex?: number;
   /** フラグメント総数。fragmentIndex とともに指定する */
   totalFragments?: number;
+  /** 前のフラグメントの終了時刻（秒）。同一文言が複数セグメントにある場合、この時刻より後ろのセグメントを選ぶ（ドキュメント順の整合） */
+  minStartTime?: number;
+  /** フラグメント直前のテキスト（transcript から取得）。複数候補時に周囲テキストでスコアリングして最も一致するセグメントを選ぶ */
+  contextBefore?: string;
+  /** フラグメント直後のテキスト（transcript から取得） */
+  contextAfter?: string;
 }
 
 /** 連続する空白を1つにし、前後トリム（検索用正規化） */
 function normalizeForSearch(s: string): string {
   return s.replace(/\s+/g, " ").trim();
+}
+
+const CONTEXT_LEN = 150;
+
+/**
+ * 周囲テキスト（contextBefore / contextAfter）がセグメントの前後とどれだけ一致するかをスコア化。
+ * 戻り値が大きいほど、そのセグメントがフラグメントの出現位置と一致している可能性が高い。
+ */
+function scoreSegmentByContext(
+  contextBefore: string,
+  contextAfter: string,
+  segIdx: number,
+  segments: TimestampSegment[],
+): number {
+  const prevText = segIdx > 0 ? segments[segIdx - 1].text : "";
+  const segText = segments[segIdx].text;
+  const nextText =
+    segIdx < segments.length - 1 ? segments[segIdx + 1].text : "";
+  const beforeNorm = normalizeForSearch(
+    contextBefore.slice(-CONTEXT_LEN),
+  );
+  const afterNorm = normalizeForSearch(
+    contextAfter.slice(0, CONTEXT_LEN),
+  );
+  const prevAndStart = normalizeForSearch(prevText + " " + segText);
+  const endAndNext = normalizeForSearch(segText + " " + nextText);
+
+  let scoreBefore = 0;
+  if (beforeNorm.length >= 5) {
+    for (let n = Math.min(beforeNorm.length, 80); n >= 5; n--) {
+      const suffix = beforeNorm.slice(-n);
+      if (prevAndStart.includes(suffix)) {
+        scoreBefore = n;
+        break;
+      }
+    }
+  }
+
+  let scoreAfter = 0;
+  if (afterNorm.length >= 5) {
+    for (let n = Math.min(afterNorm.length, 80); n >= 5; n--) {
+      const prefix = afterNorm.slice(0, n);
+      if (endAndNext.includes(prefix)) {
+        scoreAfter = n;
+        break;
+      }
+    }
+  }
+
+  return scoreBefore + scoreAfter;
 }
 
 /**
@@ -314,7 +370,44 @@ export function findTimestampForText(
   if (matches.length === 1) return matches[0];
 
   const byStartTime = [...matches].sort((a, b) => a.startTime - b.startTime);
-  const { fragmentIndex, totalFragments } = options ?? {};
+  const { fragmentIndex, totalFragments, minStartTime, contextBefore, contextAfter } =
+    options ?? {};
+
+  if (
+    contextBefore != null &&
+    contextAfter != null &&
+    (contextBefore.length >= 5 || contextAfter.length >= 5)
+  ) {
+    const cleanSegmentTexts = segments.map((seg) => ({
+      ...seg,
+      cleanText: seg.text.replace(/<em[^>]*>(.*?)<\/em>/gi, "$1"),
+    }));
+    let bestScore = -1;
+    let best: { startTime: number; endTime: number } | null = null;
+    for (const m of byStartTime) {
+      const segIdx = cleanSegmentTexts.findIndex(
+        (s) => s.startTime === m.startTime && s.endTime === m.endTime,
+      );
+      if (segIdx === -1) continue;
+      const score = scoreSegmentByContext(
+        contextBefore,
+        contextAfter,
+        segIdx,
+        segments,
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+    if (best != null) return best;
+  }
+
+  if (minStartTime != null && minStartTime >= 0) {
+    const afterPrevious = byStartTime.find((m) => m.startTime >= minStartTime);
+    if (afterPrevious) return afterPrevious;
+  }
+
   if (
     totalFragments != null &&
     totalFragments > 0 &&
@@ -323,6 +416,10 @@ export function findTimestampForText(
   ) {
     const index = Math.min(fragmentIndex, byStartTime.length - 1);
     return byStartTime[index];
+  }
+
+  if (totalFragments === 1 && byStartTime.length > 1) {
+    return byStartTime[byStartTime.length - 1];
   }
 
   return byStartTime[0];
@@ -336,6 +433,16 @@ export function formatTimestamp(seconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
+
+/**
+ * 秒数を「分:秒.十分の一秒」形式に変換。同一秒内の範囲表示で重複を避けるために使用。
+ */
+export function formatTimestampWithTenths(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  const tenths = Math.floor((seconds % 1) * 10);
+  return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${tenths}`;
 }
 
 /**

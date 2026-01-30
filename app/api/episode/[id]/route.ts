@@ -229,48 +229,78 @@ export async function GET(
       if (hits.length > 0) {
         highlights = hits[0].highlight || {};
 
-        // すべてのマッチ箇所を収集（フラグメント順＝ドキュメント順でタイムスタンプを対応させる）
-        // 同一内容のフラグメントは1件のみ登録（完全一致検索で重複が返ることがあるため）
+        // すべてのマッチ箇所を収集。タイムスタンプは VTT セグメントとフラグメントの対応で付与。
+        // 複数候補時は transcript の周囲テキスト（contextBefore/After）でスコアリングし、最も一致するセグメントを選ぶ。
         const transcriptSeen = new Set<string>();
+        const transcriptFull = (source.transcript_text as string) || "";
+        const CONTEXT_WINDOW = 200;
         if (highlights.transcript_text) {
           const fragmentCount = highlights.transcript_text.length;
-          highlights.transcript_text.forEach(
-            (fragment: string, index: number) => {
-              const timestamp =
-                timestampSegments.length > 0
-                  ? findTimestampForText(fragment, timestampSegments, {
-                      fragmentIndex: index,
-                      totalFragments: fragmentCount,
-                    })
-                  : null;
-              const plainText = fragment
-                .replace(/<em[^>]*>(.*?)<\/em>/gi, "$1")
-                .trim();
-              const startKey = timestamp?.startTime ?? "none";
-              const dedupeKey = `transcript_text\n${plainText}\n${startKey}`;
-              if (transcriptSeen.has(dedupeKey)) return;
-              transcriptSeen.add(dedupeKey);
-
-              if (process.env.NODE_ENV === "development") {
-                if (timestamp) {
-                  console.log(
-                    `[DEBUG] タイムスタンプ取得成功 [${index}]: ${timestamp.startTime}s - ${timestamp.endTime}s`,
-                  );
-                } else {
-                  console.warn(
-                    `[DEBUG] タイムスタンプ取得失敗 [${index}]: フラグメント=${fragment.substring(0, 50)}...`,
-                  );
-                }
+          for (let index = 0; index < highlights.transcript_text.length; index++) {
+            const fragment = highlights.transcript_text[index];
+            const plainText = fragment
+              .replace(/<em[^>]*>(.*?)<\/em>/gi, "$1")
+              .trim();
+            let contextBefore = "";
+            let contextAfter = "";
+            if (transcriptFull.length >= plainText.length) {
+              const offsets: number[] = [];
+              let pos = 0;
+              while (pos < transcriptFull.length) {
+                const i = transcriptFull.indexOf(plainText, pos);
+                if (i === -1) break;
+                offsets.push(i);
+                pos = i + 1;
               }
+              if (offsets.length > 0) {
+                const offset =
+                  offsets[Math.min(index, offsets.length - 1)];
+                contextBefore = transcriptFull.slice(
+                  Math.max(0, offset - CONTEXT_WINDOW),
+                  offset,
+                );
+                contextAfter = transcriptFull.slice(
+                  offset + plainText.length,
+                  Math.min(
+                    transcriptFull.length,
+                    offset + plainText.length + CONTEXT_WINDOW,
+                  ),
+                );
+              }
+            }
+            const timestamp =
+              timestampSegments.length > 0
+                ? findTimestampForText(fragment, timestampSegments, {
+                    fragmentIndex: index,
+                    totalFragments: fragmentCount,
+                    contextBefore,
+                    contextAfter,
+                  })
+                : null;
+            const startKey = timestamp?.startTime ?? "none";
+            const dedupeKey = `transcript_text\n${plainText}\n${startKey}`;
+            if (transcriptSeen.has(dedupeKey)) continue;
+            transcriptSeen.add(dedupeKey);
 
-              allMatchPositions.push({
-                text: fragment,
-                field: "transcript_text",
-                position: index,
-                timestamp: timestamp || undefined,
-              });
-            },
-          );
+            if (process.env.NODE_ENV === "development") {
+              if (timestamp) {
+                console.log(
+                  `[DEBUG] タイムスタンプ取得成功 [${index}]: ${timestamp.startTime}s - ${timestamp.endTime}s`,
+                );
+              } else {
+                console.warn(
+                  `[DEBUG] タイムスタンプ取得失敗 [${index}]: フラグメント=${fragment.substring(0, 50)}...`,
+                );
+              }
+            }
+
+            allMatchPositions.push({
+              text: fragment,
+              field: "transcript_text",
+              position: index,
+              timestamp: timestamp || undefined,
+            });
+          }
         }
         if (highlights.description) {
           const descSeen = new Set<string>();

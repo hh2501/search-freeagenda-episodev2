@@ -3,7 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatTimestamp } from "@/lib/transcript/timestamp";
+import {
+  formatTimestamp,
+  formatTimestampWithTenths,
+} from "@/lib/transcript/timestamp";
 
 interface Episode {
   episodeId: string;
@@ -444,12 +447,20 @@ export default function EpisodeDetail() {
                           : "説明文"}{" "}
                         - マッチ {index + 1}
                       </div>
-                      {match.timestamp && (
-                        <div className="text-label-small font-medium text-freeagenda-dark bg-white px-2.5 py-1 rounded-md border border-freeagenda-light">
-                          {formatTimestamp(match.timestamp.startTime)} -{" "}
-                          {formatTimestamp(match.timestamp.endTime)}
-                        </div>
-                      )}
+                      {match.timestamp && (() => {
+                        const start = match.timestamp.startTime;
+                        const end = match.timestamp.endTime;
+                        const sameSecond =
+                          Math.floor(start) === Math.floor(end) && start !== end;
+                        const fmt = sameSecond
+                          ? formatTimestampWithTenths
+                          : formatTimestamp;
+                        return (
+                          <div className="text-label-small font-medium text-freeagenda-dark bg-white px-2.5 py-1 rounded-md border border-freeagenda-light">
+                            {fmt(start)} - {fmt(end)}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <p
                       className="text-body-medium text-gray-700 leading-relaxed"
