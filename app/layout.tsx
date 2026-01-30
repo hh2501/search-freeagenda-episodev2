@@ -10,7 +10,6 @@ const SpeedInsights = dynamic(
   { ssr: false },
 );
 
-// FCP短縮: ウェイトを2つに絞り転送量と描画待ちを削減（500は400で代替）
 const notoSansJP = Noto_Sans_JP({
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -36,7 +35,6 @@ export const viewport = {
   themeColor: "#ffffff",
 };
 
-/** HTML をユーザーに近い Edge でレンダリングし TTFB 短縮（Vercel Edge Runtime） */
 export const runtime = "edge";
 
 export default function RootLayout({
@@ -47,15 +45,8 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        {/* ファーストビュー用クリティカルCSSをインライン化（LCP短縮）。フルCSSは import "./globals.css" で Next が自動挿入 */}
         <CriticalCSS />
-        {/* LCP 画像の先行読み込み（HTML 解析直後から開始） */}
-        <link
-          rel="preload"
-          href="/Thumbnail_image.jpg"
-          as="image"
-        />
-        {/* フォント・同一オリジンの接続を先行（TTFB/Resource load delay 短縮） */}
+        <link rel="preload" href="/Thumbnail_image.jpg" as="image" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>

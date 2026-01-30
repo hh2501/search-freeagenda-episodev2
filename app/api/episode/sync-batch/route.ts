@@ -4,8 +4,8 @@ import { saveEpisode, saveTranscript } from '@/lib/db/episodes';
 import { fetchTranscript } from '@/lib/transcript/fetcher';
 import { clearCache } from '@/lib/cache/search-cache';
 
-// APIルートを動的として明示的に設定（静的生成を無効化）
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * 複数のエピソードを一度に取得・保存するAPI

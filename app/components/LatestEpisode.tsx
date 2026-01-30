@@ -10,22 +10,14 @@ interface LatestEpisodeProps {
   } | null;
 }
 
-/**
- * 最新エピソード表示コンポーネント（クライアントコンポーネント）
- * 遅延読み込みで優先度を下げる
- */
 export default function LatestEpisode({
   initialEpisode = null,
 }: LatestEpisodeProps) {
   const [latestEpisode, setLatestEpisode] = useState(initialEpisode);
 
   useEffect(() => {
-    // 既に初期値がある場合はスキップ
     if (initialEpisode) return;
-
-    // 最新エピソード情報を取得（遅延読み込みで優先度を下げる）
     const fetchLatestEpisode = async () => {
-      // ブラウザがアイドル状態になったら実行
       if (typeof window !== "undefined" && "requestIdleCallback" in window) {
         requestIdleCallback(
           async () => {
@@ -48,7 +40,6 @@ export default function LatestEpisode({
           { timeout: 2000 },
         );
       } else {
-        // requestIdleCallbackがサポートされていない場合は、短い遅延後に実行
         setTimeout(async () => {
           try {
             const response = await fetch("/api/latest-episode");

@@ -1,10 +1,8 @@
-// クリティカルCSS（ファーストビュー用）をインライン化
 export default function CriticalCSS() {
   return (
     <style
       dangerouslySetInnerHTML={{
         __html: `
-/* クリティカルCSS: ファーストビュー（HomeHeader + 検索フォーム）に必要な最小限のスタイル */
 :root {
   --md-outline: rgba(121, 116, 126, 0.38);
   --md-on-surface: #1c1b1f;
@@ -26,8 +24,6 @@ body {
 * {
   font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
 }
-
-/* 検索フォーム（クリティカル） */
 .md-search-form {
   display: flex;
   align-items: stretch;
@@ -84,8 +80,6 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-/* タイポグラフィ（クリティカル） */
 .text-headline-medium {
   font-size: 1.75rem;
   line-height: 2.25rem;
@@ -119,8 +113,6 @@ body {
 .font-medium {
   font-weight: 500;
 }
-
-/* レイアウト（クリティカル） */
 .min-h-screen {
   min-height: 100vh;
 }
@@ -171,8 +163,6 @@ body {
 .items-center {
   align-items: center;
 }
-
-/* 画像（クリティカル） */
 img {
   max-width: 100%;
   height: auto;

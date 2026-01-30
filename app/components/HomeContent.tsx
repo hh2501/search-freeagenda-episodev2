@@ -62,7 +62,6 @@ export default function HomeContent() {
   const [totalResults, setTotalResults] = useState(0);
   const [hasScrolledToEpisode, setHasScrolledToEpisode] = useState(false);
 
-  // エピソードクリック時のハンドラー（統一化）
   const handleEpisodeClick = useCallback(
     (episodeId: string) => {
       sessionStorageUtils.saveLastClickedEpisodeId(episodeId);
@@ -74,64 +73,49 @@ export default function HomeContent() {
   );
 
   useEffect(() => {
-    // キーワード一覧を遅延読み込みして初期バンドルを軽くする
     import("@/lib/search-keywords.json").then((module) => {
       const keywords = module.default as string[];
       if (keywords.length > 0) {
-        const randomKeyword =
-          keywords[Math.floor(Math.random() * keywords.length)];
-        setPlaceholder(randomKeyword);
+        setPlaceholder(
+          keywords[Math.floor(Math.random() * keywords.length)]
+        );
       }
     });
-
   }, []);
 
-  // URLパラメータから検索クエリを読み取って自動検索
   useEffect(() => {
     const urlQuery = searchParams.get("q");
     const urlExactMatch = searchParams.get("exact") === "1";
     const urlPage = parseInt(searchParams.get("page") || "1", 10);
-
-    // クエリまたはページ番号が変わった場合に検索を実行
     const queryChanged = urlQuery && urlQuery !== query;
     const pageChanged = urlPage !== currentPage;
     const exactMatchChanged = urlExactMatch !== exactMatchMode;
 
     if (urlQuery && (queryChanged || pageChanged || exactMatchChanged)) {
-      // 状態を更新（ページ番号の更新は検索実行前に）
       if (queryChanged) setQuery(urlQuery);
       if (exactMatchChanged) setExactMatchMode(urlExactMatch);
       if (pageChanged) {
         setCurrentPage(urlPage);
-        // ページ変更時は即座にローディング状態を表示
         setLoading(true);
       }
       setIsInitialLoad(true);
-
-      // クライアントサイドキャッシュから検索結果を取得（全ページキャッシュ対応）
       const cacheKey = sessionStorageUtils.buildSearchCacheKey(
         urlQuery,
         urlExactMatch,
         urlPage,
       );
       const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
-
-      // キャッシュから復元（全ページ対応）
       if (cachedResults) {
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
           restoreSearchResultsFromCache(parsedData, urlPage);
-          return; // キャッシュから復元した場合はAPIを呼び出さない
+          return;
         } catch (e) {
-          // キャッシュのパースに失敗した場合は通常の検索を実行
           console.error("Failed to parse cached results", e);
         }
       }
-
-      // 自動検索を実行（ページ変更時はローディング状態をスキップ）
       performSearch(urlQuery, urlExactMatch, urlPage, pageChanged);
     } else if (!urlQuery && query) {
-      // URLパラメータがなくなった場合は検索状態をリセット
       setQuery("");
       setExactMatchMode(false);
       setHasSearched(false);
@@ -143,7 +127,6 @@ export default function HomeContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    // 入力が空になったときに新しいランダムキーワードを設定し、検索状態をリセット
     if (query === "" && !isInitialLoad) {
       import("@/lib/search-keywords.json").then((module) => {
         const kw = module.default as string[];
@@ -156,9 +139,6 @@ export default function HomeContent() {
     }
   }, [query, isInitialLoad]);
 
-
-  // 検索結果が表示された後、エピソード詳細から戻った場合にクリック前のスクロール位置を復元
-  // （完全一致⇔部分検索の切り替えやページ変更だけのときは何もしない）
   useEffect(() => {
     if (
       results.length === 0 ||
@@ -185,23 +165,16 @@ export default function HomeContent() {
     }
   }, [results, hasSearched, loading, hasScrolledToEpisode]);
 
-  // 検索が実行されたときにスクロールフラグをリセット
   useEffect(() => {
     if (loading) {
       setHasScrolledToEpisode(false);
     }
   }, [loading]);
 
-  // URLパラメータが変わったとき（エピソード詳細ページから戻った場合）にスクロールフラグをリセット
   useEffect(() => {
-    const urlQuery = searchParams.get("q");
-    if (urlQuery) {
-      // 検索クエリがある場合、スクロールフラグをリセットして再スクロールを許可
-      setHasScrolledToEpisode(false);
-    }
+    if (searchParams.get("q")) setHasScrolledToEpisode(false);
   }, [searchParams]);
 
-  // キャッシュから検索結果を復元（副作用あり）
   const restoreSearchResultsFromCache = useCallback(
     (cachedData: SearchResponse, page: number) => {
       setResults(cachedData.results || []);
@@ -217,7 +190,6 @@ export default function HomeContent() {
     [],
   );
 
-  // 検索APIを呼び出して結果を取得（副作用あり）
   const fetchSearchResults = useCallback(
     async (searchQuery: string, exactMatch: boolean, page: number) => {
       const params = buildSearchUrlParams(searchQuery, exactMatch, page);
@@ -228,38 +200,11 @@ export default function HomeContent() {
       if (!response.ok) {
         throw new Error(data.error || "検索に失敗しました");
       }
-
-      // デバッグ用ログ（開発環境のみ）
-      if (process.env.NODE_ENV === "development") {
-        console.log("[DEBUG] Search results:", data.results);
-        if (data.results && data.results.length > 0) {
-          console.log(
-            "[DEBUG] First result keywordPreviews:",
-            data.results[0].keywordPreviews,
-          );
-          if (data.results[0].keywordPreviews) {
-            data.results[0].keywordPreviews.forEach(
-              (kp: any, index: number) => {
-                console.log(`[DEBUG] KeywordPreview ${index}:`, {
-                  keyword: kp.keyword,
-                  fragment: kp.fragment,
-                  hasMark: kp.fragment.includes("<mark>"),
-                  fragmentPreview: kp.fragment.substring(0, 100),
-                });
-              },
-            );
-          }
-        }
-      }
-
       const searchResults = data.results || [];
       setResults(searchResults);
       setTotalResults(data.total || searchResults.length);
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.page || page);
-
-      // クライアントサイドキャッシュに保存（全ページ対応、最大5ページまで）
-      // メモリ使用量を考慮して制限を設ける
       if (page <= 5) {
         const cacheKey = sessionStorageUtils.buildSearchCacheKey(
           searchQuery,
@@ -281,20 +226,13 @@ export default function HomeContent() {
       page: number = 1,
       skipLoadingState: boolean = false,
     ) => {
-      // ガード節: 空のクエリは早期リターン
-      if (!searchQuery.trim()) {
-        return;
-      }
-
-      // キャッシュから検索結果を取得（全ページキャッシュ対応）
+      if (!searchQuery.trim()) return;
       const cacheKey = sessionStorageUtils.buildSearchCacheKey(
         searchQuery,
         exactMatch,
         page,
       );
       const cachedResults = sessionStorageUtils.getSearchCache(cacheKey);
-
-      // ガード節: キャッシュがあれば早期リターン
       if (cachedResults) {
         try {
           const parsedData: SearchResponse = JSON.parse(cachedResults);
@@ -304,8 +242,6 @@ export default function HomeContent() {
           console.error("Failed to parse cached results", e);
         }
       }
-
-      // ローディング状態は呼び出し元で設定済みの場合はスキップ
       if (!skipLoadingState) {
         setLoading(true);
       }
@@ -329,9 +265,7 @@ export default function HomeContent() {
   );
 
   useEffect(() => {
-    // スラッシュ（/）キーで検索バーにフォーカスを移動
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 検索バーが既にフォーカスされている場合、または他の入力フィールドがフォーカスされている場合は何もしない
       const activeElement = document.activeElement as HTMLElement | null;
       if (
         activeElement?.tagName === "INPUT" ||
@@ -342,8 +276,6 @@ export default function HomeContent() {
       ) {
         return;
       }
-
-      // スラッシュ（/）キーが押された場合
       if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         searchInputRef.current?.focus();
@@ -370,22 +302,12 @@ export default function HomeContent() {
 
   const handlePageChange = useCallback(
     async (newPage: number) => {
-      // ガード節: 無効なページ番号は早期リターン
       if (newPage < 1 || newPage > totalPages) return;
-
-      // オプティミスティックUI更新: 即座にページ番号とローディング状態を更新
       setCurrentPage(newPage);
       setLoading(true);
-
-      // URLパラメータを更新（非ブロッキング）
       const params = buildSearchUrlParams(query, exactMatchMode, newPage);
-      const queryString = params.toString();
-      router.push(`/?${queryString}`, { scroll: false });
-
-      // 検索を実行
+      router.push(`/?${params.toString()}`, { scroll: false });
       await performSearch(query, exactMatchMode, newPage);
-
-      // 検索結果の一番上から表示するよう即時スクロール（アニメーションなし）
       searchResultsRef.current?.scrollIntoView({
         behavior: "auto",
         block: "start",
@@ -394,13 +316,10 @@ export default function HomeContent() {
     [query, exactMatchMode, totalPages, router, performSearch],
   );
 
-  // エピソードURLを構築（メモ化）
   const buildEpisodeUrlMemoized = useCallback(
     (episodeId: string) => buildEpisodeUrl(episodeId, query, exactMatchMode),
     [query, exactMatchMode],
   );
-
-  // 検索結果をソート（メモ化）
   const sortedResults = useMemo(
     () => sortSearchResults(results, sortBy),
     [results, sortBy],
@@ -418,7 +337,6 @@ export default function HomeContent() {
               setQuery(e.target.value);
             }}
             onKeyDown={(e) => {
-              // Enterキーで検索を実行
               if (e.key === "Enter") {
                 e.preventDefault();
                 handleSearch(e as any);
@@ -501,8 +419,6 @@ export default function HomeContent() {
           </button>
         </div>
       </form>
-
-      {/* 検索モード選択チェックボックス */}
       <div className="mb-6 flex items-center justify-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -515,9 +431,6 @@ export default function HomeContent() {
           <span className="text-body-medium text-gray-700">完全一致検索</span>
         </label>
       </div>
-
-      {/* 検索のコツ: サーバーコンポーネントの表示/非表示を制御 */}
-
       {error && (
         <div className="mb-6 p-5 bg-red-50 border-2 border-red-200 text-red-800 rounded-xl shadow-sm">
           <div className="text-title-medium font-semibold mb-2">
@@ -589,7 +502,6 @@ export default function HomeContent() {
         </div>
       )}
 
-      {/* ページネーション */}
       {results.length > 0 && hasSearched && query !== "" && totalPages > 1 && (
         <Pagination
           currentPage={currentPage}

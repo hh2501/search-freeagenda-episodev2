@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Material Design 3 カラーシステム */
 :root {
   --md-outline: rgba(121, 116, 126, 0.38);
   --md-on-surface: #1c1b1f;
@@ -12,8 +11,6 @@
   --md-surface-container-high: #f0eaf4;
   --md-surface-container-highest: #eae3ed;
 }
-
-/* ページ全体の背景色とフォント */
 body {
   background-color: var(--md-surface-bright);
   font-family:
@@ -30,16 +27,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/* モバイル: ビューポート外は描画を遅延して初回表示を軽くする */
 @media (max-width: 768px) {
   .content-below-fold {
     content-visibility: auto;
     contain-intrinsic-size: auto 200px;
   }
 }
-
-/* すべての要素にNoto Sans JPフォントを適用 */
 * {
   font-family:
     "Noto Sans JP",
@@ -53,9 +46,7 @@ body {
     sans-serif;
 }
 
-/* Material Design 3 スタイル */
 @layer components {
-  /* アウトライン入力フィールド（Material Design 3） */
   .md-outlined-input {
     @apply w-full px-4 py-3.5 pr-10 
            border border-gray-300 rounded-l-md rounded-r-none
@@ -65,8 +56,6 @@ body {
            bg-white text-gray-900
            hover:border-gray-400;
   }
-
-  /* 一体化検索フォーム */
   .md-search-form {
     @apply flex items-stretch relative
            border border-gray-300 rounded-md
@@ -106,8 +95,6 @@ body {
   .md-search-form-button:active {
     background-color: rgba(48, 77, 95, 0.88);
   }
-
-  /* フィルドボタン（Material Design 3） */
   .md-filled-button {
     @apply px-6 py-3.5 bg-freeagenda-dark text-white rounded-md
            text-sm font-medium
@@ -127,8 +114,6 @@ body {
       0px 1px 2px 0px rgba(0, 0, 0, 0.3),
       0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   }
-
-  /* アウトラインボタン（Material Design 3） */
   .md-outlined-button {
     @apply px-6 py-3.5 bg-transparent text-freeagenda-dark rounded-md
            text-sm font-medium
@@ -143,21 +128,15 @@ body {
   .md-outlined-button:disabled {
     opacity: 0.38;
   }
-
-  /* アウトラインカード（Material Design 3） */
   .md-outlined-card {
     @apply bg-white rounded-xl border border-gray-200 p-6
            transition-all duration-200 ease-out;
   }
-
-  /* エレベーションカード（Material Design 3） */
   .md-elevated-card {
     @apply bg-white rounded-xl p-6
            shadow-sm hover:shadow-md
            transition-all duration-200 ease-out;
   }
-
-  /* インタラクティブな検索結果カード（Material Design 3） */
   .md-result-card {
     @apply bg-white rounded-xl p-6
            shadow-sm hover:shadow-lg
@@ -176,8 +155,6 @@ body {
       0px 1px 2px 0px rgba(0, 0, 0, 0.3),
       0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   }
-
-  /* テキストボタン（Material Design 3） */
   .md-text-button {
     @apply text-sm text-freeagenda-dark
            font-medium transition-all duration-200 ease-out
@@ -185,16 +162,12 @@ body {
            rounded-sm px-3 py-2
            focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20;
   }
-
-  /* コードスタイル（Material Design 3） */
   .md-code {
     @apply inline-block px-2.5 py-1 rounded-sm font-mono text-xs font-semibold
            bg-gray-100 border border-gray-300
            text-gray-900
            transition-all duration-200 ease-out;
   }
-
-  /* チップ（Material Design 3） */
   .md-chip {
     @apply inline-flex items-center px-3 py-1.5 rounded-full
            bg-gray-100 text-gray-700
@@ -203,22 +176,16 @@ body {
            transition-all duration-200 ease-out
            hover:bg-gray-200;
   }
-
-  /* バッジ（Material Design 3） */
   .md-badge {
     @apply inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5
            rounded-full bg-freeagenda-dark text-white
            text-xs font-medium;
   }
 }
-
-/* ハイライト表示用のスタイル（Material Design 3） */
 mark {
   @apply bg-yellow-200/60 px-0.5 rounded-sm;
   color: inherit;
 }
-
-/* Material Design 3 アニメーション（Material Motion） */
 @keyframes ripple {
   0% {
     transform: scale(0);
@@ -240,8 +207,6 @@ mark {
     transform: translateY(0);
   }
 }
-
-/* Material Design 3 Easing Functions */
 :root {
   --md-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --md-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);

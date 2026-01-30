@@ -1,8 +1,3 @@
-/**
- * 検索関連のヘルパー関数
- * 問い合わせと更新の分離原則に従い、副作用のない純粋関数として実装
- */
-
 interface SearchResult {
   episodeId: string;
   title: string;
@@ -16,9 +11,6 @@ interface SearchResult {
 
 type SortBy = "relevance" | "date-desc" | "date-asc";
 
-/**
- * 検索結果をソート（副作用なし）
- */
 export function sortSearchResults(
   results: SearchResult[],
   sortBy: SortBy,
@@ -47,9 +39,6 @@ export function sortSearchResults(
   }
 }
 
-/**
- * 日付をフォーマット（副作用なし）
- */
 export function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);
@@ -63,9 +52,6 @@ export function formatDate(dateString: string): string {
   }
 }
 
-/**
- * エピソードURLを構築（副作用なし）
- */
 export function buildEpisodeUrl(
   episodeId: string,
   query: string,
@@ -82,9 +68,6 @@ export function buildEpisodeUrl(
   return `/episode/${episodeId}${queryString ? `?${queryString}` : ""}`;
 }
 
-/**
- * 検索URLパラメータを構築（副作用なし）
- */
 export function buildSearchUrlParams(
   query: string,
   exactMatch: boolean,

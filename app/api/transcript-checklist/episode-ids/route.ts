@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * POST: エピソード番号とタイトルのリストからエピソードIDを取得
  */

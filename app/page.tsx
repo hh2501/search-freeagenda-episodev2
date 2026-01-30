@@ -4,24 +4,19 @@ import Link from "next/link";
 import HomeHeader from "./components/HomeHeader";
 import LatestEpisode from "./components/LatestEpisode";
 
-// LCP 短縮: 検索フォームは Suspense fallback で即表示、HomeContent は JS 読み込み後に表示
 const HomeContent = dynamic(
   () => import("./components/HomeContent").then((m) => m.default),
   { ssr: false }
 );
 
-// トップページの再検証間隔（秒）。キャッシュで繰り返し訪問を高速化
 export const revalidate = 60;
 
 export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* 静的コンテンツ: サーバーコンポーネントでレンダリング */}
         <HomeHeader />
         <LatestEpisode />
-
-        {/* useSearchParams() 使用のため Suspense 必須。静的フォームで即時表示（しずかなインターネット方式） */}
         <Suspense
           fallback={
             <div className="mb-8" aria-hidden="true">
@@ -65,8 +60,6 @@ export default function Home() {
         >
           <HomeContent />
         </Suspense>
-
-        {/* ページ最下部: モバイルでは content-visibility で描画遅延 */}
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
           <div className="flex gap-4 justify-center items-center flex-wrap">
             <Link href="/tips" className="md-text-button">

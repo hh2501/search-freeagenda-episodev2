@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
 
-// APIルートを動的として明示的に設定（静的生成を無効化）
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    // OpenSearchクライアントの確認
     if (!client) {
       return NextResponse.json({
         status: 'error',

@@ -5,8 +5,8 @@ import {
   findTimestampForText,
 } from "@/lib/transcript/timestamp";
 
-// APIルートを動的として明示的に設定（静的生成を無効化）
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,

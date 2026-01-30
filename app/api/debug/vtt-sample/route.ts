@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import client, { INDEX_NAME } from "@/lib/db/index";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const PREVIEW_CHARS = 4000;
 const PREVIEW_LINES = 60;

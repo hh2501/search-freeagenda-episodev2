@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
 import { updateEpisodePublishedAt, findEpisodeByTitle } from '@/lib/db/episodes';
 
-// APIルートを動的として明示的に設定（静的生成を無効化）
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 interface UpdateRequest {
   episodes: Array<{

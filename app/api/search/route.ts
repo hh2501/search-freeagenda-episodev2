@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import client, { INDEX_NAME, initializeIndex } from "@/lib/db/index";
 import { getCachedResult, setCachedResult } from "@/lib/cache/search-cache";
 
-// APIルートを動的として明示的に設定（静的生成を無効化）
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const startTime = performance.now();
@@ -20,8 +20,6 @@ export async function GET(request: NextRequest) {
       { status: 400 },
     );
   }
-
-  // OpenSearchクライアントの確認
   if (!client) {
     return NextResponse.json(
       {
@@ -33,61 +31,33 @@ export async function GET(request: NextRequest) {
   }
 
   const searchQuery = query.trim();
-  // キャッシュキーにページ番号を含める（ページング対応）
   const cacheKey = exactMatchParam
     ? `${searchQuery}:exact:page${page}`
     : `${searchQuery}:page${page}`;
-
-  // キャッシュから結果を取得
-  const cacheCheckStart = performance.now();
   const cachedResult = getCachedResult(cacheKey);
-  const cacheCheckTime = performance.now() - cacheCheckStart;
-
-  if (cachedResult) {
-    // キャッシュヒット時は、キャッシュされた結果を返す
-    const totalTime = performance.now() - startTime;
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `[CACHE HIT] Query: ${cacheKey}, Cache check: ${cacheCheckTime.toFixed(2)}ms, Total: ${totalTime.toFixed(2)}ms`,
-      );
-    }
-    return NextResponse.json(cachedResult);
-  }
+  if (cachedResult) return NextResponse.json(cachedResult);
 
   try {
-    // 検索APIでは、インデックス存在チェックをスキップしてパフォーマンスを向上
-    // インデックスが存在しない場合は、検索時にエラーが返されるので、その時点でエラーハンドリングする
-    const initIndexTime = 0; // スキップしたため0ms
-
-    // 完全一致検索の解析
+    const initIndexTime = 0;
     const queryParseStart = performance.now();
     let exactMatches: string[] = [];
     let processedQuery = searchQuery;
 
     if (exactMatchParam) {
-      // チェックボックスがONの場合は、クエリ全体を完全一致検索として扱う
       const keywords = searchQuery.split(/\s+/).filter((k) => k.length > 0);
       exactMatches = keywords;
       processedQuery = "";
     } else {
-      // 部分検索: キーワードをそのまま使用
       processedQuery = searchQuery.trim();
     }
-
     const queryParseTime = performance.now() - queryParseStart;
-
-    // クエリの構築（最適化: 重複処理を削減）
     const queryBuildStart = performance.now();
-
-    // キーワード分割を1回だけ実行
     const keywords = processedQuery
       ? processedQuery.split(/\s+/).filter((k) => k.length > 0)
       : [];
     const hasMultipleKeywords = keywords.length > 1;
     const allKeywords = exactMatchParam ? exactMatches : keywords;
     const hasAllKeywords = allKeywords.length > 1;
-
-    // 完全一致検索用のクエリ構築ヘルパー関数
     const createExactMatchQuery = (phrase: string) => ({
       multi_match: {
         query: phrase,
@@ -96,15 +66,9 @@ export async function GET(request: NextRequest) {
         slop: 0,
       },
     });
-
-    // 通常検索用のクエリ構築
     const buildNormalQueries = (): any[] => {
-      if (!processedQuery || processedQuery.length === 0) {
-        return [];
-      }
-
+      if (!processedQuery || processedQuery.length === 0) return [];
       if (hasMultipleKeywords) {
-        // 複数キーワード: 各キーワードをAND条件で検索
         return keywords.map((keyword) => ({
           multi_match: {
             query: keyword,
@@ -114,7 +78,6 @@ export async function GET(request: NextRequest) {
           },
         }));
       } else {
-        // 単一キーワード: フレーズマッチと単語マッチの両方
         return [
           {
             multi_match: {
