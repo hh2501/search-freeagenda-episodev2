@@ -1,8 +1,14 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import HomeHeader from "./components/HomeHeader";
 import LatestEpisode from "./components/LatestEpisode";
-import HomeContent from "./components/HomeContent";
+
+// LCP 短縮: 検索フォームは Suspense fallback で即表示、HomeContent は JS 読み込み後に表示
+const HomeContent = dynamic(
+  () => import("./components/HomeContent").then((m) => m.default),
+  { ssr: false }
+);
 
 // トップページの再検証間隔（秒）。キャッシュで繰り返し訪問を高速化
 export const revalidate = 60;

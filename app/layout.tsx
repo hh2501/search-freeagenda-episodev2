@@ -46,6 +46,15 @@ export default function RootLayout({
       <head>
         {/* ファーストビュー用クリティカルCSSをインライン化（LCP短縮）。フルCSSは import "./globals.css" で Next が自動挿入 */}
         <CriticalCSS />
+        {/* LCP 画像の先行読み込み（HTML 解析直後から開始） */}
+        <link
+          rel="preload"
+          href="/Thumbnail_image.jpg"
+          as="image"
+        />
+        {/* フォント・同一オリジンの接続を先行（TTFB/Resource load delay 短縮） */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
       <body className={notoSansJP.className}>
         <NextTopLoader
