@@ -543,13 +543,13 @@ export default function HomeContent() {
 
       {results.length > 0 && hasSearched && query !== "" && (
         <div ref={searchResultsRef} className="mb-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-            <div className="text-label-large text-gray-600 font-medium whitespace-nowrap">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="text-label-medium md:text-label-large text-gray-600 font-medium min-w-0 flex-shrink">
               {totalResults > 0
                 ? `全${totalResults}件中 ${(currentPage - 1) * 25 + 1}-${Math.min(currentPage * 25, totalResults)}件を表示`
                 : `${results.length}件の検索結果`}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <select
                 id="sort-select"
                 value={sortBy}
@@ -559,7 +559,7 @@ export default function HomeContent() {
                   )
                 }
                 aria-label="並び替え"
-                className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark transition-all flex-shrink-0"
+                className="px-3 md:px-4 py-2 text-body-small md:text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark transition-all"
               >
                 <option value="relevance">関連度順</option>
                 <option value="date-desc">日付順（新着）</option>
