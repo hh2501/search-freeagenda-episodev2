@@ -13,7 +13,8 @@ export default function HomeHeader() {
           priority
           loading="eager"
           fetchPriority="high"
-          sizes="(max-width: 480px) 180px, (max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
+          sizes="(max-width: 480px) 120px, (max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
+          quality={85}
         />
       </div>
       <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">
