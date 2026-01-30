@@ -550,12 +550,6 @@ export default function HomeContent() {
                 : `${results.length}件の検索結果`}
             </div>
             <div className="flex items-center gap-3">
-              <label
-                htmlFor="sort-select"
-                className="text-label-medium text-gray-600 whitespace-nowrap"
-              >
-                並び替え:
-              </label>
               <select
                 id="sort-select"
                 value={sortBy}
@@ -564,6 +558,7 @@ export default function HomeContent() {
                     e.target.value as "relevance" | "date-desc" | "date-asc",
                   )
                 }
+                aria-label="並び替え"
                 className="px-4 py-2 text-body-medium border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-freeagenda-dark/20 focus:border-freeagenda-dark transition-all flex-shrink-0"
               >
                 <option value="relevance">関連度順</option>
