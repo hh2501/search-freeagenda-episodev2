@@ -4,8 +4,8 @@ import {
   parseVTTWithTimestamps,
   findTimestampForText,
 } from "@/lib/transcript/timestamp";
+import { CACHE_CONTROL_EPISODE, cacheHeaders } from "@/lib/cache-headers";
 
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(
@@ -320,19 +320,22 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({
-      episode: {
-        episodeId: source.episode_id,
-        title: source.title,
-        description: source.description,
-        publishedAt: source.published_at,
-        listenUrl: source.listen_url,
-        transcriptText: source.transcript_text,
+    return NextResponse.json(
+      {
+        episode: {
+          episodeId: source.episode_id,
+          title: source.title,
+          description: source.description,
+          publishedAt: source.published_at,
+          listenUrl: source.listen_url,
+          transcriptText: source.transcript_text,
+        },
+        highlights,
+        allMatchPositions,
+        searchQuery: searchQuery || null,
       },
-      highlights,
-      allMatchPositions,
-      searchQuery: searchQuery || null,
-    });
+      { headers: cacheHeaders(CACHE_CONTROL_EPISODE) },
+    );
   } catch (error: any) {
     console.error("Error fetching episode:", error);
 

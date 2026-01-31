@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
+import { CACHE_CONTROL_LATEST_EPISODE, cacheHeaders } from '@/lib/cache-headers';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
@@ -45,13 +45,16 @@ export async function GET() {
     const latestEpisode = hits[0]._source;
     const episodeNumber = extractEpisodeNumber(latestEpisode.title);
 
-    return NextResponse.json({
-      episodeNumber: episodeNumber || null,
-      title: latestEpisode.title,
-      publishedAt: latestEpisode.published_at,
-      listenUrl: latestEpisode.listen_url,
-      episodeId: latestEpisode.episode_id,
-    });
+    return NextResponse.json(
+      {
+        episodeNumber: episodeNumber || null,
+        title: latestEpisode.title,
+        publishedAt: latestEpisode.published_at,
+        listenUrl: latestEpisode.listen_url,
+        episodeId: latestEpisode.episode_id,
+      },
+      { headers: cacheHeaders(CACHE_CONTROL_LATEST_EPISODE) },
+    );
   } catch (error) {
     console.error('最新エピソード取得エラー:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);

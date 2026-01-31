@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import client, { INDEX_NAME } from '@/lib/db/index';
+import { CACHE_CONTROL_COUNT, cacheHeaders } from '@/lib/cache-headers';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
@@ -25,7 +25,10 @@ export async function GET() {
 
     const count = (response as any).count || (response as any).body?.count || 0;
 
-    return NextResponse.json({ count });
+    return NextResponse.json(
+      { count },
+      { headers: cacheHeaders(CACHE_CONTROL_COUNT) },
+    );
   } catch (error: any) {
     console.error('エピソード数取得エラー:', error);
     return NextResponse.json(

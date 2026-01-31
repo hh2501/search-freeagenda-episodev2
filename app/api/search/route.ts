@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import client, { INDEX_NAME, initializeIndex } from "@/lib/db/index";
 import { getCachedResult, setCachedResult } from "@/lib/cache/search-cache";
+import { CACHE_CONTROL_SEARCH, cacheHeaders } from "@/lib/cache-headers";
 
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
@@ -35,7 +35,11 @@ export async function GET(request: NextRequest) {
     ? `${searchQuery}:exact:page${page}`
     : `${searchQuery}:page${page}`;
   const cachedResult = getCachedResult(cacheKey);
-  if (cachedResult) return NextResponse.json(cachedResult);
+  if (cachedResult) {
+    return NextResponse.json(cachedResult, {
+      headers: cacheHeaders(CACHE_CONTROL_SEARCH),
+    });
+  }
 
   try {
     const initIndexTime = 0;
@@ -633,7 +637,9 @@ export async function GET(request: NextRequest) {
       console.log(`  - Results: ${results.length}`);
     }
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(responseData, {
+      headers: cacheHeaders(CACHE_CONTROL_SEARCH),
+    });
   } catch (error) {
     console.error("検索エラー:", error);
 
