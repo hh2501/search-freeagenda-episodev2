@@ -45,7 +45,7 @@
       "episodeNumber": "10",
       "title": "#10 社内政治の是非",
       "publishedAt": "2020-01-26T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
@@ -53,7 +53,7 @@
       "episodeNumber": "11",
       "title": "#11 コンテンツからパーソンへ",
       "publishedAt": "2020-01-27T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
@@ -61,7 +61,7 @@
       "episodeNumber": "12",
       "title": "#12 マンションマーケットについて",
       "publishedAt": "2020-01-28T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
@@ -69,7 +69,7 @@
       "episodeNumber": "13",
       "title": "#13 神は順序に宿る",
       "publishedAt": "2020-01-29T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
@@ -77,7 +77,7 @@
       "episodeNumber": "14",
       "title": "#14 ハンター×ハンターの「制約と誓約」には人生が詰まっている",
       "publishedAt": "2020-01-30T15:00:00.000Z",
-      "checked": false,
+      "checked": true,
       "checkedAt": null
     },
     {
