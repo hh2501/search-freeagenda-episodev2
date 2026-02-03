@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { Noto_Sans_JP } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import CriticalCSS from "./components/CriticalCSS";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import "./globals.css";
 
 const SpeedInsights = dynamic(
@@ -64,6 +65,7 @@ export default function RootLayout({
         />
         {children}
         <SpeedInsights />
+        <GoogleAnalytics />
       </body>
     </html>
   );
