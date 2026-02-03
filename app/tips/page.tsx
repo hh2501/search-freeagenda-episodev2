@@ -1,5 +1,4 @@
 import Link from "next/link";
-import HomeHeader from "../components/HomeHeader";
 import SearchTipsClient from "../components/SearchTipsClient";
 
 export const metadata = {
@@ -12,7 +11,6 @@ export default function TipsPage() {
   return (
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <HomeHeader />
         <div className="mt-8">
           <Link
             href="/"
