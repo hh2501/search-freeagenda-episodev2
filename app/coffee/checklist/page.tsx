@@ -185,7 +185,7 @@ export default function Checklist() {
           </Link>
         </div>
 
-        <div className="md-elevated-card">
+        <div className="md-outlined-card">
           <h1 className="text-headline-large md:text-display-small font-bold mb-6 text-gray-900">
             文字起こしチェックリスト
           </h1>

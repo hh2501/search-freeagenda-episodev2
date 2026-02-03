@@ -186,7 +186,7 @@ export default function Coffee() {
           </Link>
         </div>
 
-        <div className="md-elevated-card">
+        <div className="md-outlined-card">
           <h1 className="text-title-large font-bold mb-6 text-gray-900">
             コーヒーを奢る
           </h1>
