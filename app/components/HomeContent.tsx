@@ -12,6 +12,7 @@ import {
   buildEpisodeUrl,
   buildSearchUrlParams,
 } from "../utils/searchHelpers";
+import { sendSearchEvent } from "../utils/analytics";
 
 const SearchResultCard = dynamic<SearchResultCardProps>(
   () => import("./SearchResultCard"),
@@ -214,6 +215,7 @@ export default function HomeContent() {
         sessionStorageUtils.saveSearchCache(cacheKey, data);
       }
 
+      sendSearchEvent(searchQuery, data.page ?? page);
       setHasScrolledToEpisode(false);
     },
     [],
