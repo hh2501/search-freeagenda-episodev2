@@ -5,7 +5,7 @@ export default function HomeHeader() {
     <div className="text-center mb-8">
       <div className="mb-6 flex justify-center">
         <Image
-          src="/Thumbnail_image.jpg"
+          src="/Compressed_Thumbnail_image.png"
           alt="FREE AGENDA by Hikaru & Yamotty"
           width={400}
           height={400}

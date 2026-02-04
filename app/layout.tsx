@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   description:
     "「フリーアジェンダのあの回」は、思い出せないエピソードを簡単に見つけられる非公式の検索ツールです。トーク内容の細部まで、文字起こしから検索が可能です。",
   icons: {
-    icon: "/Thumbnail_image.jpg",
-    shortcut: "/Thumbnail_image.jpg",
-    apple: "/Thumbnail_image.jpg",
+    icon: "/Compressed_Thumbnail_image.png",
+    shortcut: "/Compressed_Thumbnail_image.png",
+    apple: "/Compressed_Thumbnail_image.png",
   },
 };
 
@@ -47,7 +47,7 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <CriticalCSS />
-        <link rel="preload" href="/Thumbnail_image.jpg" as="image" />
+        <link rel="preload" href="/Compressed_Thumbnail_image.png" as="image" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
