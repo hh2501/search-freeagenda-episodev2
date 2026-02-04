@@ -63,7 +63,7 @@ export default function Home() {
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
           <div className="flex gap-4 justify-center items-center flex-wrap">
             <Link href="/tips" className="md-text-button">
-              検索のコツを見る
+              検索のコツ
             </Link>
             <a href="/about" className="md-text-button">
               このサイトについて
