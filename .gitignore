@@ -39,6 +39,8 @@ next-env.d.ts
 markdownfiles/
 *.md
 !README.md
+!docs/*.md
+!.cursor/rules/*.mdc
 
 # AWS OpenSearch関連（移行済みのため不要）
 *opensearch*.md
@@ -63,3 +65,4 @@ Pictures/
 OneDrive/
 .vscode/
 .cursor/
+!.cursor/rules/
