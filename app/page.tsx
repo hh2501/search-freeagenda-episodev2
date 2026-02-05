@@ -61,19 +61,19 @@ export default function Home() {
           <HomeContent />
         </Suspense>
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
-          <div className="flex gap-2 md:gap-4 justify-center items-center flex-nowrap overflow-x-auto">
-            <Link href="/tips" className="md-text-button whitespace-nowrap">
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-4 justify-center items-center">
+            <Link href="/tips" className="md-text-button">
               検索のコツ
             </Link>
-            <a href="/about" className="md-text-button whitespace-nowrap">
+            <a href="/about" className="md-text-button">
               このサイトについて
             </a>
             {process.env.NODE_ENV !== "production" && (
-              <a href="/sync" className="md-text-button whitespace-nowrap">
+              <a href="/sync" className="md-text-button">
                 データ同期ページ
               </a>
             )}
-            <Link href="/coffee" className="md-text-button whitespace-nowrap">
+            <Link href="/coffee" className="md-text-button">
               コーヒーを奢る
             </Link>
           </div>
