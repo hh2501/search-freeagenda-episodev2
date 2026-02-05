@@ -417,17 +417,6 @@ export default function EpisodeDetail() {
             LISTENで聴く
           </a>
 
-          {episode.description && (
-            <div className="mb-8">
-              <h2 className="text-title-large font-semibold text-gray-800 mb-3">
-                説明
-              </h2>
-              <p className="text-body-large text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {episode.description}
-              </p>
-            </div>
-          )}
-
           {searchQuery && displayMatches.length > 0 && (
             <div className="mb-8">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
