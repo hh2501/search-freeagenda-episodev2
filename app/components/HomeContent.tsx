@@ -357,6 +357,15 @@ export default function HomeContent() {
               type="button"
               onClick={() => {
                 setQuery("");
+                setResults([]);
+                setHasSearched(false);
+                setCurrentPage(1);
+                setTotalPages(1);
+                setTotalResults(0);
+                setExactMatchMode(false);
+                setError(null);
+                setSortBy("relevance");
+                router.push("/", { scroll: false });
                 searchInputRef.current?.focus();
               }}
               className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none rounded-full p-1 hover:bg-gray-100"
