@@ -156,7 +156,7 @@ body {
       0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   }
   .md-text-button {
-    @apply text-sm text-freeagenda-dark
+    @apply text-xs md:text-sm text-freeagenda-dark
            font-medium transition-all duration-200 ease-out
            hover:bg-gray-100 active:bg-gray-200
            rounded-sm px-3 py-2
