@@ -65,29 +65,33 @@ export default function Home() {
           <HomeContent />
         </Suspense>
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
-          <div className="flex flex-col md:flex-row flex-wrap gap-4 md:gap-8 items-start">
-            <Link href="/tips" className="md-text-button">
-              検索のコツ
-            </Link>
-            <a href="/about" className="md-text-button">
-              このサイトについて
-            </a>
-            {process.env.NODE_ENV !== "production" && (
-              <a href="/sync" className="md-text-button">
-                データ同期ページ
+          <div className="flex flex-col md:flex-row md:flex-wrap gap-4 md:gap-8 justify-center items-start">
+            <div className="flex flex-col gap-4 md:contents">
+              <Link href="/tips" className="md-text-button">
+                検索のコツ
+              </Link>
+              <a href="/about" className="md-text-button">
+                このサイトについて
               </a>
-            )}
-            <Link href="/coffee" className="md-text-button">
-              コーヒーを奢る
-            </Link>
-            <a
-              href="https://x.com/_miozuma_"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="md-text-button"
-            >
-              Developed by miozuma
-            </a>
+            </div>
+            <div className="flex flex-col gap-4 md:contents">
+              {process.env.NODE_ENV !== "production" && (
+                <a href="/sync" className="md-text-button">
+                  データ同期ページ
+                </a>
+              )}
+              <Link href="/coffee" className="md-text-button">
+                コーヒーを奢る
+              </Link>
+              <a
+                href="https://x.com/_miozuma_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="md-text-button"
+              >
+                Developed by miozuma
+              </a>
+            </div>
           </div>
         </div>
       </div>
