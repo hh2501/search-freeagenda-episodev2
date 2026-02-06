@@ -81,6 +81,14 @@ export default function Home() {
               <Link href="/coffee" className="md-text-button">
                 コーヒーを奢る
               </Link>
+              <a
+                href="https://x.com/_miozuma_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="md-text-button"
+              >
+                Developed by miozuma
+              </a>
             </div>
           </div>
         </div>
