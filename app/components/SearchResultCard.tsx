@@ -122,7 +122,7 @@ const SearchResultCard = memo(function SearchResultCard({
             handleLinkClick();
           }}
         >
-          エピソード詳細を見る
+          マッチ箇所を見る
         </Link>
         <a
           href={result.listenUrl}
