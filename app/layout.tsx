@@ -15,7 +15,7 @@ const notoSansJP = Noto_Sans_JP({
   weight: ["400", "700"],
   subsets: ["latin"],
   display: "swap",
-  preload: true,
+  preload: false,
   adjustFontFallback: true,
 });
 
@@ -47,7 +47,6 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <CriticalCSS />
-        <link rel="preload" href="/Compressed_Thumbnail_image.png" as="image" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
