@@ -66,7 +66,7 @@ export default function Home() {
         </Suspense>
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
           <div className="flex flex-row flex-wrap md:flex-row md:flex-wrap gap-4 md:gap-8 justify-center items-start">
-            <div className="flex flex-col gap-4 md:contents">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
               <Link href="/tips" className="md-text-button">
                 検索のコツ
               </Link>
@@ -74,7 +74,7 @@ export default function Home() {
                 このサイトについて
               </a>
             </div>
-            <div className="flex flex-col gap-4 md:contents">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
               {process.env.NODE_ENV !== "production" && (
                 <a href="/sync" className="md-text-button">
                   データ同期ページ
