@@ -13,6 +13,7 @@ export default function HomeHeader() {
           priority
           loading="eager"
           fetchPriority="high"
+          decoding="async"
           sizes="(max-width: 480px) 120px, (max-width: 768px) 200px, (max-width: 1024px) 300px, 400px"
           quality={85}
         />
