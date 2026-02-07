@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { Noto_Sans_JP } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import CriticalCSS from "./components/CriticalCSS";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import "./globals.css";
-
-const SpeedInsights = dynamic(
-  () => import("@vercel/speed-insights/next").then((m) => m.SpeedInsights),
-  { ssr: false },
-);
 
 const notoSansJP = Noto_Sans_JP({
   weight: ["400", "700"],
@@ -63,7 +57,6 @@ export default function RootLayout({
           shadow="0 0 10px #304d5f,0 0 5px #304d5f"
         />
         {children}
-        <SpeedInsights />
         <GoogleAnalytics />
       </body>
     </html>
