@@ -22,6 +22,64 @@ const nextConfig = {
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // コード分割とバンドル最適化
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // クライアントサイドのコード分割を最適化
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: "all",
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // フレームワーク（React, Next.js）を別チャンクに
+            framework: {
+              name: "framework",
+              chunks: "all",
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|next)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            // その他のnode_modulesを別チャンクに
+            lib: {
+              test: /[\\/]node_modules[\\/]/,
+              name(module) {
+                const packageName = module.context.match(
+                  /[\\/]node_modules[\\/](.*?)([\\/]|$)/,
+                )?.[1];
+                return packageName
+                  ? `npm.${packageName.replace("@", "")}`
+                  : null;
+              },
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            // 共通コードを別チャンクに
+            commons: {
+              name: "commons",
+              minChunks: 2,
+              priority: 20,
+              reuseExistingChunk: true,
+            },
+            // 残りを別チャンクに
+            shared: {
+              name: "shared",
+              minChunks: 2,
+              priority: 10,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
+  // 圧縮設定（Brotli圧縮はVercelで自動的に有効）
+  compress: true,
+  // 本番環境でのソースマップを無効化（バンドルサイズ削減）
+  productionBrowserSourceMaps: false,
 };
 
 module.exports = withBundleAnalyzer(nextConfig);
