@@ -41,11 +41,16 @@ const nextConfig = {
               priority: 40,
               enforce: true,
             },
-            // その他のnode_modulesを別チャンクに
+            // その他のnode_modulesを別チャンクに（CSSファイルを除外）
             lib: {
               test: /[\\/]node_modules[\\/]/,
+              type: "javascript/auto",
               name(module) {
-                const packageName = module.context.match(
+                // CSSファイルは除外
+                if (module.type && module.type.startsWith("css")) {
+                  return null;
+                }
+                const packageName = module.context?.match(
                   /[\\/]node_modules[\\/](.*?)([\\/]|$)/,
                 )?.[1];
                 return packageName
