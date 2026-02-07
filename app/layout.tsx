@@ -11,7 +11,7 @@ const SpeedInsights = dynamic(
 );
 
 const NextTopLoader = dynamic(
-  () => import("nextjs-toploader").then((m) => m.default),
+  () => import("nextjs-toploader") as Promise<{ default: React.ComponentType<any> }>,
   { ssr: false },
 );
 
