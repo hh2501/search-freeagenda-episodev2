@@ -219,7 +219,7 @@ export default function Coffee() {
 
             <div className="mt-8 pt-8 border-t border-gray-200">
               <h2 className="text-title-large font-semibold text-gray-800 mb-4">
-                文字起こしチェックリスト
+                文字起こし修正状況
               </h2>
 
               {lastUpdated && (
