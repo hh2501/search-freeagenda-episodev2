@@ -65,8 +65,8 @@ export default function Home() {
           <HomeContent />
         </Suspense>
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
-          <div className="flex flex-row flex-wrap md:flex-row md:flex-wrap gap-4 md:gap-8 justify-center items-start">
-            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
+          <div className="flex flex-row flex-wrap md:flex-row md:flex-wrap gap-4 md:gap-8 justify-center items-center md:items-start">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8 items-center md:items-start">
               <Link href="/tips" className="md-text-button text-gray-400 text-center">
                 検索のコツ
               </Link>
@@ -74,13 +74,15 @@ export default function Home() {
                 このサイトについて
               </a>
             </div>
-            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8 items-center md:items-start">
               <Link href="/coffee" className="md-text-button text-gray-400 text-center">
                 文字起こし修正状況
               </Link>
               <Link href="/support" className="md-text-button text-gray-400 text-center">
                 コーヒーを奢る
               </Link>
+            </div>
+            <div className="flex justify-center w-full md:w-auto">
               <a
                 href="https://x.com/_miozuma_"
                 target="_blank"
