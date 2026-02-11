@@ -78,6 +78,9 @@ export default function Home() {
               <Link href="/coffee" className="md-text-button text-gray-400 text-center">
                 文字起こし修正状況
               </Link>
+              <Link href="/support" className="md-text-button text-gray-400 text-center">
+                コーヒーを奢る
+              </Link>
               <a
                 href="https://x.com/_miozuma_"
                 target="_blank"
