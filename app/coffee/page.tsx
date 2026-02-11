@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 interface ChecklistEpisode {
   episodeId: string;
@@ -188,49 +187,19 @@ export default function Coffee() {
 
         <div className="md-outlined-card">
           <h1 className="text-title-large font-bold mb-6 text-gray-900">
-            コーヒーを奢る
+            文字起こし修正状況
           </h1>
 
           <div className="prose prose-lg max-w-none">
-            <div className="text-body-medium text-gray-700 leading-relaxed mb-6 space-y-3">
-              <p>
-                当サイトでは、検索性を高めるため、自動文字起こし特有の誤字や表記ゆれを手作業で修正しています。
-              </p>
-              <p>現在は週に7エピソードほどのペースで更新中です。</p>
-              <p>
-                もし活動を応援いただけるようでしたら、コーヒー1杯分ほどのサポートをいただけますと幸いです。
-              </p>
-            </div>
+            {lastUpdated && (
+              <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-body-small text-blue-800">
+                  最終更新: {new Date(lastUpdated).toLocaleString("ja-JP")}
+                </p>
+              </div>
+            )}
 
-            <div className="flex justify-center mb-8">
-              <a
-                href="https://buymeacoffee.com/miozuma"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src="/bmc-button.png"
-                  alt="Buy Me a Coffee"
-                  width={217}
-                  height={60}
-                />
-              </a>
-            </div>
-
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <h2 className="text-title-large font-semibold text-gray-800 mb-4">
-                文字起こし修正状況
-              </h2>
-
-              {lastUpdated && (
-                <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-body-small text-blue-800">
-                    最終更新: {new Date(lastUpdated).toLocaleString("ja-JP")}
-                  </p>
-                </div>
-              )}
-
-              {loading ? (
+            {loading ? (
                 <div className="flex items-center justify-center py-20">
                   <div className="text-center">
                     <svg
@@ -320,7 +289,6 @@ export default function Coffee() {
                   )}
                 </div>
               )}
-            </div>
           </div>
         </div>
       </div>
