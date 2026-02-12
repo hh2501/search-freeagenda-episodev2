@@ -1,10 +1,11 @@
 export default function HomeHeader() {
   return (
-    <div className="text-center mb-8">
-      <h1 className="text-headline-medium md:text-headline-large font-bold mb-4 text-gray-900">
-        フリーアジェンダのあの回
+    <div className="text-center mb-4">
+      <h1 className="text-display-small md:text-display-medium font-bold mb-6 text-freeagenda-dark">
+        <span className="block">フリーアジェンダの</span>
+        <span className="block">あの回</span>
       </h1>
-      <p className="text-body-medium text-gray-600 mb-4 font-medium">
+      <p className="text-body-medium text-gray-600 mb-3 font-medium">
         探している「あの回」を覚えているキーワードから検索
       </p>
     </div>

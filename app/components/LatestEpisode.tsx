@@ -68,7 +68,7 @@ export default function LatestEpisode({
   }
 
   return (
-    <div className="flex flex-col items-center pb-3 text-xs">
+    <div className="flex flex-col items-center pb-6 text-xs">
       <div className="min-h-6 text-gray-600">
         最新反映回:{" "}
         <a
