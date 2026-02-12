@@ -431,14 +431,27 @@ export default function HomeContent() {
         </div>
       </form>
       <div className="mb-6 flex items-center justify-center gap-3">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={exactMatchMode}
-            onChange={(e) => setExactMatchMode(e.target.checked)}
-            className="w-4 h-4 text-freeagenda-dark border-gray-300 rounded focus:ring-freeagenda-dark focus:ring-2"
-            disabled={loading}
-          />
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <span className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-within:ring-2 focus-within:ring-freeagenda-dark focus-within:ring-offset-2 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+            <input
+              type="checkbox"
+              checked={exactMatchMode}
+              onChange={(e) => setExactMatchMode(e.target.checked)}
+              disabled={loading}
+              className="sr-only peer"
+              aria-label="完全一致検索"
+            />
+            <span
+              className={`block h-full w-full rounded-full transition-colors ${
+                exactMatchMode ? "bg-freeagenda-dark" : "bg-gray-300"
+              }`}
+            />
+            <span
+              className={`pointer-events-none absolute top-0.5 left-0.5 inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+                exactMatchMode ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </span>
           <span className="text-body-medium text-gray-700">完全一致検索</span>
         </label>
       </div>
