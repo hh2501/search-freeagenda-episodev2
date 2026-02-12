@@ -32,7 +32,7 @@ export default function SearchTipsClient() {
             完全一致検索
           </h4>
           <p className="text-body-medium text-gray-600 leading-relaxed">
-            「完全一致検索」にチェックを入れると、
+            「完全一致検索」のトグルをオンにすると、
             <strong>キーワードと完全に一致する文字列</strong>
             を含むエピソードのみが表示されます。
             <br />
