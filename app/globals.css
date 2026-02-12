@@ -27,12 +27,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-@media (max-width: 768px) {
-  .content-below-fold {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 200px;
-  }
-}
+/* content-below-fold: content-visibility removed to reduce CLS from layout recalculation */
 * {
   font-family:
     "Noto Sans JP",

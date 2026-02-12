@@ -20,10 +20,12 @@ export default function Home() {
     <main className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <HomeHeader />
-        <LatestEpisode />
+        <div className="min-h-[1.5rem]">
+          <LatestEpisode />
+        </div>
         <Suspense
           fallback={
-            <div className="mb-8" aria-hidden="true">
+            <div className="mb-8 min-h-[136px]" aria-hidden="true">
               <div className="md-search-form relative">
                 <input
                   type="text"
@@ -55,6 +57,7 @@ export default function Home() {
                 </button>
               </div>
               <div className="mb-6 flex items-center justify-center gap-3">
+                <span className="invisible w-4 h-4 shrink-0" aria-hidden="true" />
                 <span className="text-body-medium text-gray-500">
                   完全一致検索
                 </span>
