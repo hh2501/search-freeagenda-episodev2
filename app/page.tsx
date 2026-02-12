@@ -58,7 +58,7 @@ export default function Home() {
               </div>
               <div className="mb-6 flex items-center justify-center gap-3">
                 <span
-                  className="inline-flex h-6 w-11 shrink-0 rounded-full bg-gray-300"
+                  className="inline-flex h-6 w-11 shrink-0 rounded-full bg-gray-400"
                   aria-hidden="true"
                 />
                 <span className="text-body-medium text-gray-500">

@@ -443,11 +443,13 @@ export default function HomeContent() {
             />
             <span
               className={`block h-full w-full rounded-full transition-colors ${
-                exactMatchMode ? "bg-freeagenda-dark" : "bg-gray-300"
+                exactMatchMode
+                  ? "bg-freeagenda-dark"
+                  : "bg-gray-400"
               }`}
             />
             <span
-              className={`pointer-events-none absolute top-0.5 left-0.5 inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+              className={`pointer-events-none absolute top-0.5 left-0.5 inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform ${
                 exactMatchMode ? "translate-x-5" : "translate-x-0"
               }`}
             />
