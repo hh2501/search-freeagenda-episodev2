@@ -269,7 +269,7 @@ export default function Checklist() {
                     {checkedEpisodes.map((episode) => (
                       <div
                         key={`${episode.episodeNumber}-${episode.episodeId}`}
-                        className="border-l-2 border-green-500 pl-3 py-1.5 bg-green-50 rounded-r"
+                        className="border-l-2 border-freeagenda-dark pl-3 py-1.5 bg-freeagenda-light/20 rounded-r"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-body-small text-gray-800">
