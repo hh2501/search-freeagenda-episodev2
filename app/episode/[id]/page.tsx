@@ -7,6 +7,11 @@ import {
   formatTimestamp,
   formatTimestampWithTenths,
 } from "@/lib/transcript/timestamp";
+import {
+  getValidTranscriptAuth,
+  saveTranscriptAuth,
+  clearTranscriptAuth,
+} from "@/app/utils/sessionStorage";
 
 interface Episode {
   episodeId: string;
@@ -215,10 +220,7 @@ export default function EpisodeDetail() {
       if (data.authenticated) {
         setIsAuthenticated(true);
         setShowPasswordDialog(false);
-        // パスワードをsessionStorageに保存（保存時に使用するため）
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("transcript_edit_password", password);
-        }
+        saveTranscriptAuth(password);
         setPassword("");
         setIsEditing(true);
         setEditedTranscript(episode?.transcriptText || "");
@@ -236,9 +238,17 @@ export default function EpisodeDetail() {
     if (isAuthenticated) {
       setIsEditing(true);
       setEditedTranscript(episode?.transcriptText || "");
-    } else {
-      setShowPasswordDialog(true);
+      return;
     }
+    // 2時間以内の認証キャッシュがあればパスワード入力をスキップ
+    const validAuth = getValidTranscriptAuth();
+    if (validAuth) {
+      setIsAuthenticated(true);
+      setIsEditing(true);
+      setEditedTranscript(episode?.transcriptText || "");
+      return;
+    }
+    setShowPasswordDialog(true);
   };
 
   const handleSaveTranscript = async () => {
@@ -246,13 +256,13 @@ export default function EpisodeDetail() {
 
     setSaving(true);
     try {
-      // パスワードを取得（セッションストレージから）
-      // 編集ボタンをクリックしたときに既に認証済みなので、パスワードは存在するはず
-      const storedPassword = sessionStorage.getItem("transcript_edit_password");
-      if (!storedPassword) {
-        // 万が一パスワードが存在しない場合（通常は発生しない）
-        throw new Error("認証情報が見つかりません。再度認証してください。");
+      const validAuth = getValidTranscriptAuth();
+      if (!validAuth) {
+        setIsAuthenticated(false);
+        setShowPasswordDialog(true);
+        throw new Error("認証の有効期限が切れました。再度パスワードを入力してください。");
       }
+      const storedPassword = validAuth.password;
 
       const response = await fetch(`/api/episode/${episodeId}/transcript`, {
         method: "PUT",
@@ -287,6 +297,7 @@ export default function EpisodeDetail() {
         setIsAuthenticated(false);
         setIsEditing(false);
         setShowPasswordDialog(true);
+        clearTranscriptAuth();
       }
     } finally {
       setSaving(false);
@@ -568,9 +579,7 @@ export default function EpisodeDetail() {
                         setIsAuthenticated(false);
                         setIsEditing(false);
                         setShowPasswordDialog(false);
-                        if (typeof window !== "undefined") {
-                          sessionStorage.removeItem("transcript_edit_password");
-                        }
+                        clearTranscriptAuth();
                       }}
                       disabled={saving}
                       className="md-text-button text-gray-600"
