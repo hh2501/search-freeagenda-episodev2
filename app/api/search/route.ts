@@ -5,6 +5,21 @@ import { CACHE_CONTROL_SEARCH, cacheHeaders } from "@/lib/cache-headers";
 
 export const runtime = "nodejs";
 
+/** ワイルドカードの特殊文字 *, ?, \ をエスケープ */
+const escapeWildcard = (s: string): string =>
+  s.replace(/[\\*?]/g, (c) => `\\${c}`);
+
+/** キーワードの部分一致用ワイルドカードクエリを生成。2文字未満は空配列を返す */
+const buildWildcardQueries = (keyword: string): any[] => {
+  if (keyword.length < 2) return [];
+  const pattern = `*${escapeWildcard(keyword)}*`;
+  return [
+    { wildcard: { title: { value: pattern } } },
+    { wildcard: { description: { value: pattern } } },
+    { wildcard: { transcript_text: { value: pattern } } },
+  ];
+};
+
 export async function GET(request: NextRequest) {
   const startTime = performance.now();
   const searchParams = request.nextUrl.searchParams;
@@ -62,45 +77,71 @@ export async function GET(request: NextRequest) {
     const hasMultipleKeywords = keywords.length > 1;
     const allKeywords = exactMatchParam ? exactMatches : keywords;
     const hasAllKeywords = allKeywords.length > 1;
-    const createExactMatchQuery = (phrase: string) => ({
-      multi_match: {
-        query: phrase,
-        fields: ["title^10", "description^6", "transcript_text^4"],
-        type: "phrase",
-        slop: 0,
-      },
-    });
+    const createExactMatchQuery = (phrase: string) => {
+      const phraseClause = {
+        multi_match: {
+          query: phrase,
+          fields: ["title^10", "description^6", "transcript_text^4"],
+          type: "phrase",
+          slop: 0,
+        },
+      };
+      const wildcardClauses = buildWildcardQueries(phrase);
+      if (wildcardClauses.length === 0) {
+        return phraseClause;
+      }
+      return {
+        bool: {
+          should: [phraseClause, ...wildcardClauses],
+          minimum_should_match: 1,
+        },
+      };
+    };
     const buildNormalQueries = (): any[] => {
       if (!processedQuery || processedQuery.length === 0) return [];
       if (hasMultipleKeywords) {
-        return keywords.map((keyword) => ({
-          multi_match: {
-            query: keyword,
-            fields: ["title^3", "description^2", "transcript_text"],
-            type: "best_fields",
-            operator: "or",
-          },
-        }));
-      } else {
-        return [
-          {
+        return keywords.map((keyword) => {
+          const matchClause = {
             multi_match: {
-              query: processedQuery,
-              fields: ["title^5", "description^2", "transcript_text^3"],
-              type: "phrase",
-              slop: 0,
-            },
-          },
-          {
-            multi_match: {
-              query: processedQuery,
+              query: keyword,
               fields: ["title^3", "description^2", "transcript_text"],
               type: "best_fields",
-              operator: "and",
-              minimum_should_match: "75%",
+              operator: "or",
             },
+          };
+          const wildcardClauses = buildWildcardQueries(keyword);
+          if (wildcardClauses.length === 0) {
+            return matchClause;
+          }
+          return {
+            bool: {
+              should: [matchClause, ...wildcardClauses],
+              minimum_should_match: 1,
+            },
+          };
+        });
+      } else {
+        const phraseClause = {
+          multi_match: {
+            query: processedQuery,
+            fields: ["title^5", "description^2", "transcript_text^3"],
+            type: "phrase",
+            slop: 0,
           },
-        ];
+        };
+        const bestFieldsClause = {
+          multi_match: {
+            query: processedQuery,
+            fields: ["title^3", "description^2", "transcript_text"],
+            type: "best_fields",
+            operator: "and",
+            minimum_should_match: "75%",
+          },
+        };
+        const wildcardClauses = buildWildcardQueries(processedQuery);
+        return wildcardClauses.length === 0
+          ? [phraseClause, bestFieldsClause]
+          : [phraseClause, bestFieldsClause, ...wildcardClauses];
       }
     };
 
