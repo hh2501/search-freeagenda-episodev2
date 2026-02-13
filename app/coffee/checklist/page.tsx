@@ -248,7 +248,7 @@ export default function Checklist() {
               <div className="space-y-4">
                 <div className="mb-4">
                   <p className="text-body-medium text-gray-600">
-                    チェック済み: {checkedEpisodes.length}件 / 全
+                    修正済み: {checkedEpisodes.length}件 / 全
                     {totalEpisodes > 0 ? totalEpisodes : allEpisodes.length}件
                   </p>
                 </div>
@@ -256,7 +256,7 @@ export default function Checklist() {
                 {checkedEpisodes.length === 0 ? (
                   <div className="text-center py-10">
                     <p className="text-body-medium text-gray-600 mb-4">
-                      まだチェック済みのエピソードはありません。
+                      まだ修正済みのエピソードはありません。
                     </p>
                     <p className="text-body-small text-gray-500">
                       JSONファイルの<code className="md-code">checked</code>
@@ -267,7 +267,7 @@ export default function Checklist() {
                 ) : (
                   <>
                     <h2 className="text-title-large font-semibold text-gray-800 mb-4">
-                      チェック済みエピソード
+                      修正済みエピソード
                     </h2>
                     {checkedEpisodes.map((episode) => (
                       <div
