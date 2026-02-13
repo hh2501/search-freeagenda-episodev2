@@ -18,7 +18,7 @@ export const revalidate = 60;
 export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto min-w-0">
         <HomeHeader />
         <div className="min-h-[1.5rem]">
           <LatestEpisode />

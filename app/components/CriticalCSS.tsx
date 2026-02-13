@@ -25,6 +25,8 @@ body {
   display: flex;
   align-items: stretch;
   position: relative;
+  width: 100%;
+  min-width: 0;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   background-color: #f2f2f2;
@@ -38,6 +40,7 @@ body {
 
 .md-search-form-input {
   flex: 1 1 0%;
+  min-width: 0;
   padding: 0.875rem 1rem;
   border: none;
   border-radius: 0;
