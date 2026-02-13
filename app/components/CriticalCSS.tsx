@@ -21,9 +21,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  font-family: "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
-}
 .md-search-form {
   display: flex;
   align-items: stretch;

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import NextTopLoader from "nextjs-toploader";
 import CriticalCSS from "./components/CriticalCSS";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import "./globals.css";
@@ -40,17 +39,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
       <body className={notoSansJP.className}>
-        <NextTopLoader
-          color="#304d5f"
-          initialPosition={0.1}
-          crawlSpeed={100}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #304d5f,0 0 5px #304d5f"
-        />
         {children}
         <GoogleAnalytics />
       </body>
