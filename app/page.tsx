@@ -76,9 +76,9 @@ export default function Home() {
               <Link href="/tips" className="md-text-button font-normal text-gray-400 text-center">
                 検索のコツ
               </Link>
-              <a href="/about" className="md-text-button font-normal text-gray-400 text-center">
+              <Link href="/about" className="md-text-button font-normal text-gray-400 text-center">
                 このサイトについて
-              </a>
+              </Link>
             </div>
             <div className="flex flex-col gap-4 md:flex-row md:gap-8 items-center md:items-start">
               <Link href="/coffee" className="md-text-button font-normal text-gray-400 text-center">
