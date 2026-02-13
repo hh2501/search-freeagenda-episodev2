@@ -17,11 +17,6 @@ export const metadata: Metadata = {
   title: "フリーアジェンダのあの回",
   description:
     "「フリーアジェンダのあの回」は、思い出せないエピソードを簡単に見つけられる非公式の検索ツールです。トーク内容の細部まで、文字起こしから検索が可能です。",
-  icons: {
-    icon: "/Compressed_Thumbnail_image.png",
-    shortcut: "/Compressed_Thumbnail_image.png",
-    apple: "/Compressed_Thumbnail_image.png",
-  },
 };
 
 export const viewport = {

@@ -13,7 +13,7 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  // 画像最適化設定（LCP 改善）
+  // 画像最適化設定（support ページ等で next/image 使用）
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [120, 200, 300, 400],

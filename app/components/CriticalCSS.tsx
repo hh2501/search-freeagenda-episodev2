@@ -193,24 +193,6 @@ img {
 .hover\\:shadow-xl:hover {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-
-@media (max-width: 480px) {
-  .max-w-\\[200px\\] {
-    max-width: 200px;
-  }
-}
-
-@media (min-width: 768px) {
-  .md\\:max-w-\\[300px\\] {
-    max-width: 300px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\\:max-w-\\[400px\\] {
-    max-width: 400px;
-  }
-}
         `,
       }}
     />
