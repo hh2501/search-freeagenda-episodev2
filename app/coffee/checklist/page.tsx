@@ -266,9 +266,6 @@ export default function Checklist() {
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-title-large font-semibold text-gray-800 mb-4">
-                      修正済みエピソード
-                    </h2>
                     {checkedEpisodes.map((episode) => (
                       <div
                         key={`${episode.episodeNumber}-${episode.episodeId}`}

@@ -254,9 +254,6 @@ export default function Coffee() {
                     </div>
                   ) : (
                     <>
-                      <h3 className="text-title-medium font-semibold text-gray-800 mb-4">
-                        修正済みエピソード
-                      </h3>
                       {checkedEpisodes.map((episode) => (
                         <div
                           key={`${episode.episodeNumber}-${episode.episodeId}`}
