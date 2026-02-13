@@ -54,7 +54,7 @@ export default function Support() {
                 rel="noopener noreferrer"
               >
                 <Image
-                  src="/bmc-button.png"
+                  src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
                   alt="Buy Me a Coffee"
                   width={217}
                   height={60}

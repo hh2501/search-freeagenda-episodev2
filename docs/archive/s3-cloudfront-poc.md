@@ -1,3 +1,7 @@
+> **Obsolete**: HERO 画像削除により、本 PoC の前提が変更されました。support ページ等の画像で S3/CloudFront を検討する場合は参考として残しています。
+
+---
+
 ## S3 / CloudFront 経由で画像を配信する PoC 構成案
 
 HERO 画像やアイコン画像を S3 / CloudFront 経由で配信しつつ、Next.js の `next/image` 最適化も併用するための PoC 手順です。
@@ -75,4 +79,3 @@ export const metadata: Metadata = {
 2. ローカル or ステージング環境で `next.config.js` に `remotePatterns` を追加し、`HomeHeader` / `layout` を一時的に CloudFront URL に切り替え。
 3. ステージング URL で PageSpeed Insights（モバイル）を実行し、現状構成との LCP やクリティカルパスの差分を確認。
 4. 効果と運用コスト（S3/CloudFront 運用）のバランスを見て、本番適用するか判断。
-

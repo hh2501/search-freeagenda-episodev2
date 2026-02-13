@@ -40,6 +40,7 @@ markdownfiles/
 *.md
 !README.md
 !docs/*.md
+!docs/archive/*.md
 !.cursor/rules/*.mdc
 
 # AWS OpenSearch関連（移行済みのため不要）

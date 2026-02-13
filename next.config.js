@@ -21,6 +21,13 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.buymeacoffee.com",
+        pathname: "/buttons/**",
+      },
+    ],
   },
   // コード分割とバンドル最適化
   webpack: (config, { isServer }) => {
