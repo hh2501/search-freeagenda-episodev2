@@ -81,7 +81,7 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex flex-col gap-4 md:flex-row md:gap-8 items-center md:items-start">
-              <Link href="/coffee" className="md-text-button font-normal text-gray-400 text-center">
+              <Link href="/transcript-status" className="md-text-button font-normal text-gray-400 text-center">
                 文字起こし修正状況
               </Link>
               <Link href="/support" className="md-text-button font-normal text-gray-400 text-center">

@@ -88,6 +88,17 @@ const nextConfig = {
     }
     return config;
   },
+  // 旧URLから新URLへのリダイレクト
+  async redirects() {
+    return [
+      { source: "/coffee", destination: "/transcript-status", permanent: true },
+      {
+        source: "/coffee/checklist",
+        destination: "/transcript-status/checklist",
+        permanent: true,
+      },
+    ];
+  },
   // 圧縮設定（Brotli圧縮はVercelで自動的に有効）
   compress: true,
   // 本番環境でのソースマップを無効化（バンドルサイズ削減）

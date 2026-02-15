@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "文字起こし修正状況",
 };
 
-export default function CoffeeLayout({
+export default function TranscriptStatusLayout({
   children,
 }: {
   children: React.ReactNode;

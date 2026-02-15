@@ -18,7 +18,7 @@ interface TranscriptModal {
   transcriptText: string;
 }
 
-export default function Coffee() {
+export default function TranscriptStatus() {
   const [allEpisodes, setAllEpisodes] = useState<ChecklistEpisode[]>([]);
   const [checkedEpisodes, setCheckedEpisodes] = useState<ChecklistEpisode[]>(
     [],

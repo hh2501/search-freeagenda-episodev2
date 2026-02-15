@@ -167,7 +167,7 @@ export default function Checklist() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Link
-            href="/coffee"
+            href="/transcript-status"
             className="md-text-button inline-flex items-center gap-1"
           >
             <svg
@@ -182,7 +182,7 @@ export default function Checklist() {
             >
               <path d="M15 18l-6-6 6-6" />
             </svg>
-            コーヒーを奢るページに戻る
+            文字起こし修正状況に戻る
           </Link>
         </div>
 
