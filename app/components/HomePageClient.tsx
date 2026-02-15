@@ -1,0 +1,97 @@
+"use client";
+
+import { Suspense } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import HomeHeader from "./HomeHeader";
+
+const HomeContent = dynamic(
+  () => import("./HomeContent").then((m) => m.default),
+  { ssr: false },
+);
+
+const LatestEpisode = dynamic(
+  () => import("./LatestEpisode").then((m) => m.default),
+  { ssr: false },
+);
+
+export default function HomePageClient() {
+  return (
+    <main className="min-h-screen p-4 md:p-8">
+      <div className="max-w-4xl mx-auto min-w-0">
+        <HomeHeader />
+        <div className="min-h-[1.5rem]">
+          <LatestEpisode />
+        </div>
+        <Suspense
+          fallback={
+            <div className="mb-8 min-h-[136px]" aria-hidden="true">
+              <div className="md-search-form relative">
+                <input
+                  type="text"
+                  readOnly
+                  placeholder="キーワードを入力（例: エンジニア）"
+                  className="md-search-form-input"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  className="md-search-form-button"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mb-6 flex items-center justify-center gap-3">
+                <span
+                  className="inline-flex h-6 w-11 shrink-0 rounded-full bg-gray-400"
+                  aria-hidden="true"
+                />
+                <span className="text-body-medium text-gray-500">
+                  完全一致検索
+                </span>
+              </div>
+            </div>
+          }
+        >
+          <HomeContent />
+        </Suspense>
+        <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
+          <div className="grid grid-cols-2 md:flex md:flex-row md:flex-wrap gap-4 md:gap-8 justify-items-center md:justify-center items-center md:content-center w-full min-h-[4.5rem]">
+            <Link href="/about" className="md-text-button font-normal text-gray-400 text-center">
+              このサイトについて
+            </Link>
+            <Link href="/tips" className="md-text-button font-normal text-gray-400 text-center">
+              検索のコツ
+            </Link>
+            <Link href="/transcript-status" className="md-text-button font-normal text-gray-400 text-center">
+              文字起こし修正状況
+            </Link>
+            <a
+              href="https://x.com/_miozuma_"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="md-text-button font-normal text-gray-400 text-center"
+            >
+              Developed by miozuma
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
