@@ -10,9 +10,9 @@ export const runtime = 'nodejs';
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const episodeId = params.id;
+  const { id: episodeId } = await params;
 
   if (!episodeId) {
     return NextResponse.json({ error: 'エピソードIDが必要です' }, { status: 400 });

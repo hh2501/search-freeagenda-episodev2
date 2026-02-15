@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const episodeId = params.id;
+  const { id: episodeId } = await params;
   const searchParams = request.nextUrl.searchParams;
   const searchQuery = searchParams.get("q"); // 検索クエリ（オプション）
   const exactMatchParam = searchParams.get("exact") === "1"; // 完全一致検索
