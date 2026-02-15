@@ -59,6 +59,10 @@ body {
   color: #6b7280;
 }
 
+.md-search-form-input:focus::placeholder {
+  color: #9ca3af;
+}
+
 .md-search-form-button {
   display: flex;
   align-items: center;

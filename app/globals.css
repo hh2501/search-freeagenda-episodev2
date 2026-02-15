@@ -66,6 +66,7 @@ body {
            border-none rounded-none
            focus:outline-none
            text-base placeholder:text-gray-500
+           focus:placeholder:text-gray-400
            bg-[#f2f2f2] text-gray-900
            cursor-text;
   }
