@@ -286,12 +286,12 @@ export default function Checklist() {
                             disabled={
                               loadingTranscriptEpisodeId === episode.episodeId
                             }
-                            className="p-1 text-freeagenda-dark hover:bg-freeagenda-dark/10 rounded shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 bg-freeagenda-dark text-white rounded-md shadow-sm hover:bg-freeagenda-dark/90 hover:shadow-md active:bg-freeagenda-dark/80 transition-all duration-200 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="文字起こしを見る"
                           >
                             {loadingTranscriptEpisodeId === episode.episodeId ? (
                               <svg
-                                className="animate-spin h-5 w-5"
+                                className="animate-spin h-4 w-4"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
@@ -314,10 +314,9 @@ export default function Checklist() {
                             ) : (
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                height="20"
+                                height="18"
                                 viewBox="0 -960 960 960"
-                                width="20"
-                                className="text-freeagenda-dark"
+                                width="18"
                                 fill="currentColor"
                                 aria-hidden
                               >
