@@ -258,31 +258,62 @@ export default function TranscriptStatus() {
                       {checkedEpisodes.map((episode) => (
                         <div
                           key={`${episode.episodeNumber}-${episode.episodeId}`}
-                          className="flex items-center gap-2"
+                          className="border-l-2 border-freeagenda-dark pl-3 py-1.5 pr-2 bg-freeagenda-light/20 rounded-r flex items-center justify-between gap-2"
                         >
-                          <div className="border-l-2 border-freeagenda-dark pl-3 py-1.5 bg-freeagenda-light/20 rounded-r flex-1 min-w-0">
-                            <span className="text-body-small text-gray-800">
-                              {episode.title}
-                            </span>
-                          </div>
+                          <span className="text-body-small text-gray-800 min-w-0 truncate">
+                            {episode.title}
+                          </span>
                           {episode.episodeId && (
                             <button
-                                onClick={() =>
-                                  handleShowTranscript(
-                                    episode.episodeId,
-                                    episode.title,
-                                  )
-                                }
-                                disabled={
-                                  loadingTranscriptEpisodeId ===
-                                  episode.episodeId
-                                }
-                                className="px-3 py-1.5 bg-freeagenda-dark text-white text-label-small rounded-md hover:bg-freeagenda-dark/90 active:bg-freeagenda-dark/80 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                              >
-                                {loadingTranscriptEpisodeId ===
+                              onClick={() =>
+                                handleShowTranscript(
+                                  episode.episodeId,
+                                  episode.title,
+                                )
+                              }
+                              disabled={
+                                loadingTranscriptEpisodeId ===
                                 episode.episodeId
-                                  ? "読み込み中..."
-                                  : "文字起こしを見る"}
+                              }
+                              className="p-1 text-freeagenda-dark hover:bg-freeagenda-dark/10 rounded shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="文字起こしを見る"
+                            >
+                              {loadingTranscriptEpisodeId ===
+                              episode.episodeId ? (
+                                <svg
+                                  className="animate-spin h-5 w-5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  height="20"
+                                  viewBox="0 -960 960 960"
+                                  width="20"
+                                  className="text-freeagenda-dark"
+                                  fill="currentColor"
+                                  aria-hidden
+                                >
+                                  <path d="M200-280h560v-80H200v80Zm0-160h560v-80H200v80Zm0-160h400v-80H200v80Zm-40 440q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z" />
+                                </svg>
+                              )}
                             </button>
                           )}
                         </div>
