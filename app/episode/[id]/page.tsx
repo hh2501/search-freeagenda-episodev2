@@ -272,6 +272,7 @@ export default function EpisodeDetail() {
         },
         body: JSON.stringify({
           transcriptText: editedTranscript,
+          title: episode.title,
         }),
       });
 
@@ -287,7 +288,11 @@ export default function EpisodeDetail() {
         transcriptText: editedTranscript,
       });
       setIsEditing(false);
-      alert("文字起こしを保存しました");
+      const message =
+        data.checklistUpdated === false
+          ? "文字起こしを保存しました。\n（チェックリストの更新に失敗しました）"
+          : "文字起こしを保存しました";
+      alert(message);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "保存に失敗しました";

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import client, { INDEX_NAME } from '@/lib/db/index';
+import client from '@/lib/db/index';
 import { saveTranscript } from '@/lib/db/episodes';
+import { updateChecklistChecked } from '@/lib/transcript-checklist/github-sync';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -46,7 +47,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { transcriptText } = body;
+    const { transcriptText, title } = body;
 
     if (!transcriptText || typeof transcriptText !== 'string') {
       return NextResponse.json(
@@ -58,14 +59,23 @@ export async function PUT(
     // 文字起こしを保存
     await saveTranscript(episodeId, transcriptText);
 
+    // チェックリストを GitHub で checked に更新（失敗しても保存は成功のまま）
+    const titleStr = typeof title === 'string' ? title : '';
+    const checklistUpdated = await updateChecklistChecked(episodeId, titleStr);
+
     return NextResponse.json({
       success: true,
       message: '文字起こしを更新しました',
+      checklistUpdated,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('文字起こし更新エラー:', error);
+    const details =
+      process.env.NODE_ENV === 'development' && error instanceof Error
+        ? error.message
+        : undefined;
     return NextResponse.json(
-      { error: '文字起こしの更新に失敗しました', details: process.env.NODE_ENV === 'development' ? error.message : undefined },
+      { error: '文字起こしの更新に失敗しました', details },
       { status: 500 }
     );
   }
