@@ -1,3 +1,7 @@
+/**
+ *  Above-the-fold の最小限クリティカルCSS
+ *  globals.css と重複する部分は排除し、初回描画に必要なもののみ保持
+ */
 export default function CriticalCSS() {
   return (
     <style
@@ -79,119 +83,6 @@ body {
 .md-search-form-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.text-headline-medium {
-  font-size: 1.75rem;
-  line-height: 2.25rem;
-  font-weight: 700;
-}
-
-@media (min-width: 768px) {
-  .text-headline-large {
-    font-size: 2.25rem;
-    line-height: 2.75rem;
-  }
-}
-
-.text-body-medium {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.text-gray-600 {
-  color: #4b5563;
-}
-
-.text-gray-900 {
-  color: #111827;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-.min-h-screen {
-  min-height: 100vh;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-@media (min-width: 768px) {
-  .md\\:p-8 {
-    padding: 2rem;
-  }
-}
-
-.max-w-4xl {
-  max-width: 56rem;
-}
-
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.items-center {
-  align-items: center;
-}
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-.rounded-xl {
-  border-radius: 0.75rem;
-}
-
-.shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-.duration-200 {
-  transition-duration: 200ms;
-}
-
-.ease-out {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-}
-
-.hover\\:shadow-xl:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
         `,
       }}

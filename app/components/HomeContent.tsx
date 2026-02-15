@@ -20,6 +20,14 @@ const SearchResultCard = dynamic<SearchResultCardProps>(
 
 const Pagination = dynamic<PaginationProps>(() => import("./Pagination"));
 
+const getRandomPlaceholderFromKeywords = (): Promise<string | null> =>
+  import("@/lib/search-keywords.json").then((module) => {
+    const keywords = module.default as string[];
+    return keywords.length > 0
+      ? keywords[Math.floor(Math.random() * keywords.length)]
+      : null;
+  });
+
 interface SearchResult {
   episodeId: string;
   title: string;
@@ -74,13 +82,8 @@ export default function HomeContent() {
   );
 
   useEffect(() => {
-    import("@/lib/search-keywords.json").then((module) => {
-      const keywords = module.default as string[];
-      if (keywords.length > 0) {
-        setPlaceholder(
-          keywords[Math.floor(Math.random() * keywords.length)]
-        );
-      }
+    getRandomPlaceholderFromKeywords().then((kw) => {
+      if (kw) setPlaceholder(kw);
     });
   }, []);
 
@@ -129,11 +132,8 @@ export default function HomeContent() {
 
   useEffect(() => {
     if (query === "" && !isInitialLoad) {
-      import("@/lib/search-keywords.json").then((module) => {
-        const kw = module.default as string[];
-        if (kw.length > 0) {
-          setPlaceholder(kw[Math.floor(Math.random() * kw.length)]);
-        }
+      getRandomPlaceholderFromKeywords().then((kw) => {
+        if (kw) setPlaceholder(kw);
       });
       setHasSearched(false);
       setResults([]);

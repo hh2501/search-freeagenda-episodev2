@@ -10,6 +10,10 @@
   --md-surface-container: #f7f2fa;
   --md-surface-container-high: #f0eaf4;
   --md-surface-container-highest: #eae3ed;
+  --md-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --md-easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --md-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
 }
 body {
   background-color: var(--md-surface-bright);
@@ -198,10 +202,4 @@ mark {
     opacity: 1;
     transform: translateY(0);
   }
-}
-:root {
-  --md-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --md-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
-  --md-easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
-  --md-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
 }
