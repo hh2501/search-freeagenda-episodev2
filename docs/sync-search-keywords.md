@@ -7,6 +7,7 @@
 - **スプレッドシート**: A列にキーワードを1行1件で記載（空行は無視、前後空白は trim、重複は自動で除去）
 - **同期先**: リポジトリの `lib/search-keywords.json`（文字列配列の JSON）
 - **方式**: GAS がスプレッドシートの A 列を読み取り、GitHub Contents API でファイルを PUT してコミット
+- **重要**: `TARGET_SHEET_GID` には **検索キーワードだけが A 列に並んでいるシート** の gid を指定すること。URL の gid（例: 1344358640）がエピソード一覧など別用途のシートの場合は、検索キーワード専用のシートを追加し、そのシートの gid を設定すること
 
 ## セットアップ手順
 
@@ -28,7 +29,8 @@
 | `GITHUB_REPO` | リポジトリ名（例: `search-freeagenda-episodev2`） | ○ |
 | `BRANCH` | 更新対象ブランチ（省略時は `main`） | △ |
 | `SHEET_ID` | スプレッドシート ID（URL の `/d/` と `/edit` の間） | ○ |
-| `TARGET_SHEET_GID` | A列を読むシートの gid（URL の `#gid=数字`。省略時は先頭シート） | △ |
+| `TARGET_SHEET_GID` | A列を読むシートの gid（**検索キーワードのみ**が並んでいるシートを指定。省略時は先頭シート） | △ |
+| `SKIP_ROWS` | 先頭からスキップする行数（例: 1＝1行目をヘッダーとして無視） | △ |
 
 - **GITHUB_TOKEN**: [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens) で `repo` にチェックを入れたトークンを作成して使用する
 
@@ -78,3 +80,4 @@
 | `GitHub GET failed: 404` | リポジトリ名・オーナー・ブランチ、および `lib/search-keywords.json` が存在するか確認 |
 | `GitHub PUT failed: 403` | トークンのスコープに `repo` が含まれているか、リポジトリへの書き込み権限があるか確認 |
 | onEdit が動かない | トリガーが「編集時」で `syncSearchKeywordsOnEdit` になっているか確認。初回は手動実行で権限を付与する |
+| JSON が `"false"`,`"true"`,`"title"` や `#1 ...` のようなエピソード名になっている | エピソード一覧シートを読んでいないか確認。検索キーワード専用のシートを作成し、そのシートの gid を `TARGET_SHEET_GID` に設定する。スクリプトは `true`/`false`/`title` および `#` で始まる行は自動で除外する |

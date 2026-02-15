@@ -8,7 +8,9 @@
  *   GITHUB_REPO   - Repository name
  *   BRANCH        - Branch to update (e.g. main)
  *   SHEET_ID      - Spreadsheet ID (from URL)
- *   TARGET_SHEET_GID - (Optional) Sheet gid to read column A from (e.g. 1344358640)
+ *   TARGET_SHEET_GID - (Optional) Sheet gid to read column A from. Must be the sheet
+ *                      where column A contains ONLY search keyword candidates (not episode list).
+ *   SKIP_ROWS        - (Optional) Number of rows to skip from top (e.g. 1 for header row). Default 0.
  *
  * Run syncSearchKeywords() manually or set an onEdit trigger for the sheet.
  */
@@ -29,6 +31,8 @@ function getConfig() {
   const branch = props.getProperty("BRANCH") || "main";
   const sheetId = props.getProperty("SHEET_ID");
   const sheetGid = props.getProperty("TARGET_SHEET_GID");
+  const skipRows = props.getProperty("SKIP_ROWS");
+  const skipRowsNum = skipRows != null && skipRows !== "" ? parseInt(skipRows, 10) : 0;
 
   if (!token || !owner || !repo || !sheetId) {
     throw new Error(
@@ -43,6 +47,7 @@ function getConfig() {
     branch: branch,
     sheetId: sheetId,
     sheetGid: sheetGid ? parseInt(sheetGid, 10) : null,
+    skipRows: isNaN(skipRowsNum) || skipRowsNum < 0 ? 0 : skipRowsNum,
   };
 }
 
@@ -66,9 +71,23 @@ function getTargetSheet(spreadsheetId, targetGid) {
   return spread.getSheets()[0];
 }
 
+/** Values that are not search keywords (header/checkbox) - excluded from sync. */
+const EXCLUDED_VALUES = { "true": true, "false": true, "title": true };
+
+/**
+ * Returns true if the cell value should be treated as a keyword (not a header or episode title).
+ * @param {string} trimmed - Trimmed cell value
+ * @returns {boolean}
+ */
+function isKeywordValue(trimmed) {
+  if (EXCLUDED_VALUES[String(trimmed).toLowerCase()]) return false;
+  if (trimmed.indexOf("#") === 0) return false; // e.g. "#1 エピソード名"
+  return true;
+}
+
 /**
  * Reads column A from the target sheet, trims and deduplicates (order preserved).
- * Empty cells are skipped.
+ * Skips empty cells, header-like values ("true","false","title"), and values starting with "#".
  * @returns {string[]} Array of keyword strings
  */
 function getKeywordsFromSheet() {
@@ -81,11 +100,14 @@ function getKeywordsFromSheet() {
   const values = sheet.getRange(1, 1, lastRow, 1).getValues();
   const seen = {};
   const keywords = [];
+  const skipRows = config.skipRows || 0;
   for (let i = 0; i < values.length; i++) {
+    if (i < skipRows) continue;
     const raw = values[i][0];
     if (raw == null) continue;
     const trimmed = (typeof raw === "string" ? raw : String(raw)).trim();
     if (trimmed === "") continue;
+    if (!isKeywordValue(trimmed)) continue;
     if (seen[trimmed]) continue;
     seen[trimmed] = true;
     keywords.push(trimmed);
@@ -195,10 +217,14 @@ function putFileToGitHub(keywords, config) {
 /**
  * Main entry: sync keywords from spreadsheet column A to GitHub.
  * Call this manually or from a trigger.
+ * Does nothing if no valid keywords are found (avoids overwriting with wrong sheet data).
  */
 function syncSearchKeywords() {
   const config = getConfig();
   const keywords = getKeywordsFromSheet();
+  if (keywords.length === 0) {
+    return; // Do not overwrite repo when sheet has no valid keywords (e.g. wrong sheet)
+  }
   putFileToGitHub(keywords, config);
 }
 
