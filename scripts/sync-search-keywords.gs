@@ -184,9 +184,13 @@ function putFileToGitHub(keywords, config) {
     "/contents/" +
     encodeURIComponent(FILE_PATH);
 
+  // GitHub API expects Base64-encoded UTF-8. Encode JSON as UTF-8 bytes then Base64 to avoid mojibake.
+  const utf8Blob = Utilities.newBlob(jsonString, "application/json", "UTF-8");
+  const base64Content = Utilities.base64Encode(utf8Blob.getBytes());
+
   const payload = {
     message: COMMIT_MESSAGE,
-    content: Utilities.base64Encode(jsonString),
+    content: base64Content,
     branch: config.branch,
   };
   if (current.sha) {
