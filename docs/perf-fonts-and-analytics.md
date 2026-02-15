@@ -7,9 +7,7 @@
     - `display: "swap"`
     - `preload: false`
     - `adjustFontFallback: true`
-  - `<head>` 内で:
-    - `fonts.gstatic.com` への `preconnect`
-    - `fonts.googleapis.com` への `dns-prefetch`
+  - `next/font` はビルド時にフォントをダウンロードし `_next/static` から配信するため、Google への preconnect/dns-prefetch は不要（削除済）
 - Google Analytics:
   - `app/components/GoogleAnalytics.tsx` で `next/script` を使用。
   - GA スクリプトは `strategy="lazyOnload"` で読み込み。

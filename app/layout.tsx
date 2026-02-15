@@ -42,8 +42,6 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <CriticalCSS />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
       <body className={notoSansJP.className}>
         {children}
