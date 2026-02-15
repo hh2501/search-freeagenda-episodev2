@@ -71,7 +71,7 @@ export default function Home() {
           <HomeContent />
         </Suspense>
         <div className="mt-12 pt-8 border-t border-gray-200 content-below-fold">
-          <div className="flex flex-wrap gap-4 md:gap-8 justify-center items-center content-center w-full">
+          <div className="flex flex-wrap gap-4 md:gap-8 justify-center items-center content-center w-full min-h-[4.5rem]">
             <Link href="/about" className="md-text-button font-normal text-gray-400 text-center">
               このサイトについて
             </Link>
