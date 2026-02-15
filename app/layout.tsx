@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import CriticalCSS from "./components/CriticalCSS";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import "./globals.css";
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body className={notoSansJP.className}>
         {children}
         <GoogleAnalytics />
+        <SpeedInsights />
       </body>
     </html>
   );

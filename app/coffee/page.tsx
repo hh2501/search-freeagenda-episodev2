@@ -29,7 +29,8 @@ export default function Coffee() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [transcriptModal, setTranscriptModal] =
     useState<TranscriptModal | null>(null);
-  const [loadingTranscript, setLoadingTranscript] = useState(false);
+  const [loadingTranscriptEpisodeId, setLoadingTranscriptEpisodeId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     const fetchChecklist = async () => {
@@ -135,7 +136,7 @@ export default function Coffee() {
   }, []);
 
   const handleShowTranscript = async (episodeId: string, title: string) => {
-    setLoadingTranscript(true);
+    setLoadingTranscriptEpisodeId(episodeId);
     try {
       const response = await fetch(`/api/episode/${episodeId}`, {
         cache: "no-store",
@@ -153,7 +154,7 @@ export default function Coffee() {
       console.error("文字起こし取得エラー:", err);
       setError("文字起こしの取得に失敗しました。");
     } finally {
-      setLoadingTranscript(false);
+      setLoadingTranscriptEpisodeId(null);
     }
   };
 
@@ -257,29 +258,33 @@ export default function Coffee() {
                       {checkedEpisodes.map((episode) => (
                         <div
                           key={`${episode.episodeNumber}-${episode.episodeId}`}
-                          className="border-l-2 border-freeagenda-dark pl-3 py-1.5 bg-freeagenda-light/20 rounded-r"
+                          className="flex items-center gap-2"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="border-l-2 border-freeagenda-dark pl-3 py-1.5 bg-freeagenda-light/20 rounded-r flex-1 min-w-0">
                             <span className="text-body-small text-gray-800">
                               {episode.title}
                             </span>
-                            {episode.episodeId && (
-                              <button
+                          </div>
+                          {episode.episodeId && (
+                            <button
                                 onClick={() =>
                                   handleShowTranscript(
                                     episode.episodeId,
                                     episode.title,
                                   )
                                 }
-                                disabled={loadingTranscript}
-                                className="text-label-small text-freeagenda-dark hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={
+                                  loadingTranscriptEpisodeId ===
+                                  episode.episodeId
+                                }
+                                className="px-3 py-1.5 bg-freeagenda-dark text-white text-label-small rounded-md hover:bg-freeagenda-dark/90 active:bg-freeagenda-dark/80 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                               >
-                                {loadingTranscript
+                                {loadingTranscriptEpisodeId ===
+                                episode.episodeId
                                   ? "読み込み中..."
                                   : "文字起こしを見る"}
-                              </button>
-                            )}
-                          </div>
+                            </button>
+                          )}
                         </div>
                       ))}
                     </>
