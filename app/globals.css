@@ -53,7 +53,7 @@ body {
            hover:border-gray-400;
   }
   .md-search-form {
-    @apply flex items-stretch relative w-full min-w-0
+    @apply flex items-stretch relative w-full min-w-0 overflow-hidden
            border border-gray-300 rounded-md
            bg-[#f2f2f2]
            focus-within:border-freeagenda-dark focus-within:ring-2 focus-within:ring-freeagenda-dark/20
@@ -63,7 +63,7 @@ body {
 
   .md-search-form-input {
     @apply flex-1 min-w-0 px-4 py-3.5
-           border-none rounded-none
+           border-none rounded-l-md
            focus:outline-none
            text-base placeholder:text-gray-500
            focus:placeholder:text-gray-400

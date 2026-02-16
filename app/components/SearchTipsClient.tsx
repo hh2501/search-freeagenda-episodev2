@@ -13,7 +13,7 @@ export default function SearchTipsClient() {
       </h3>
 
       <div className="space-y-6">
-        <div className="border-l-4 border-freeagenda-light pl-4 py-2">
+        <div className="border-l-4 border-[#435d6e] pl-4 py-2">
           <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
             部分検索（デフォルト）
           </h4>
@@ -27,7 +27,7 @@ export default function SearchTipsClient() {
           </p>
         </div>
 
-        <div className="border-l-4 border-freeagenda-light pl-4 py-2">
+        <div className="border-l-4 border-[#435d6e] pl-4 py-2">
           <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
             完全一致検索
           </h4>
@@ -42,7 +42,7 @@ export default function SearchTipsClient() {
           </p>
         </div>
 
-        <div className="border-l-4 border-freeagenda-light pl-4 py-2">
+        <div className="border-l-4 border-[#435d6e] pl-4 py-2">
           <h4 className="text-title-medium font-semibold text-gray-800 mb-2">
             キーワードの組み合わせ
           </h4>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import BackLinkIcon from "@/app/components/BackLinkIcon";
 import {
   formatTimestamp,
   formatTimestampWithTenths,
@@ -352,18 +353,7 @@ export default function EpisodeDetail() {
               href="/"
               className="md-text-button inline-flex items-center gap-1"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
+              <BackLinkIcon />
               トップページに戻る
             </Link>
           </div>
@@ -398,18 +388,7 @@ export default function EpisodeDetail() {
             })()}
             className="md-text-button inline-flex items-center gap-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <BackLinkIcon />
             検索結果に戻る
           </Link>
         </div>
@@ -443,7 +422,7 @@ export default function EpisodeDetail() {
                 {displayMatches.map((match, index) => (
                   <div
                     key={`${match.field}-${match.position}-${index}`}
-                    className="border-l-4 border-freeagenda-light pl-4 py-3 bg-gray-50 rounded-r-md"
+                    className="border-l-4 border-[#435d6e] pl-4 py-3 bg-gray-50 rounded-r-md"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-label-small font-semibold text-freeagenda-dark">

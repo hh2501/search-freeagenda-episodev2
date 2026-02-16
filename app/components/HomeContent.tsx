@@ -56,8 +56,7 @@ export default function HomeContent() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placeholder, setPlaceholder] =
-    useState("キーワードを入力（例: エンジニア）");
+  const [placeholder, setPlaceholder] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [sortBy, setSortBy] = useState<"relevance" | "date-desc" | "date-asc">(
     "relevance",

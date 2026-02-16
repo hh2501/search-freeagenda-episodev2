@@ -34,6 +34,7 @@ body {
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   background-color: #f2f2f2;
+  overflow: hidden;
   transition: all 0.2s ease-out;
 }
 
@@ -47,7 +48,7 @@ body {
   min-width: 0;
   padding: 0.875rem 1rem;
   border: none;
-  border-radius: 0;
+  border-radius: 0.375rem 0 0 0.375rem;
   outline: none;
   font-size: 1rem;
   background-color: #f2f2f2;

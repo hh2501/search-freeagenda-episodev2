@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import BackLinkIcon from "@/app/components/BackLinkIcon";
 
 interface ChecklistEpisode {
   episodeId: string;
@@ -170,18 +171,7 @@ export default function Checklist() {
             href="/transcript-status"
             className="md-text-button inline-flex items-center gap-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <BackLinkIcon />
             文字起こし修正状況に戻る
           </Link>
         </div>
@@ -270,7 +260,7 @@ export default function Checklist() {
                     {checkedEpisodes.map((episode) => (
                       <div
                         key={`${episode.episodeNumber}-${episode.episodeId}`}
-                        className="border-l-2 border-freeagenda-dark pl-3 py-1.5 pr-2 bg-freeagenda-light/20 rounded-r flex items-center justify-between gap-2"
+                        className="border-l-4 border-freeagenda-dark pl-3 py-1.5 pr-2 bg-freeagenda-light/20 rounded-r flex items-center justify-between gap-2"
                       >
                         <span className="text-body-small text-gray-800 min-w-0 truncate">
                           {episode.title}
