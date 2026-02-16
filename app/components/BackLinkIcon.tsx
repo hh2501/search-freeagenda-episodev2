@@ -10,7 +10,7 @@ export default function BackLinkIcon() {
       aria-hidden
     >
       <img
-        src="/chevron_left_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg"
+        src="/chevron_left_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg"
         alt=""
         width={20}
         height={20}
