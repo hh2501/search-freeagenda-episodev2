@@ -450,7 +450,7 @@ export default function HomeContent() {
             />
             <span
               className={`pointer-events-none absolute left-1 top-1/2 inline-block h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm ring-0 transition-transform ${
-                exactMatchMode ? "translate-x-[18px]" : "translate-x-0"
+                exactMatchMode ? "translate-x-[18px]" : "-translate-x-0.5"
               }`}
             />
           </span>
